@@ -24,19 +24,15 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
    cd my-vault
    ```
 
-2. **Customize your efforts** — the repo ships with 3 default efforts (Work, Life Maintenance, Personal Projects). Edit `efforts.yaml` directly, or run `/efforts` and let the agent guide you:
-   ```
-   /efforts
-   ```
-   As your needs grow, use `/efforts add` to create new efforts or `/efforts splinter work` to break a complex effort into sub-efforts.
-
-3. **Start a session** — open Claude Code in this directory and run:
+2. **Start a session** — open Claude Code in this directory and run:
    ```
    /pulse
    ```
-   The agent reads your efforts, generates a Map for each one, and gives you a priority briefing. You're live.
+   That's it. The repo ships with 3 default efforts — **Work**, **Life Maintenance**, and **Personal Projects** — covering the universal domains of any knowledge worker. The agent generates Maps and gives you a priority briefing. You're live.
 
-4. **Open in Obsidian** (optional) — point Obsidian at this directory for graph view, Dataview tables, and browsing. Install the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for dynamic queries.
+   When you're ready to tailor efforts to your life, see [Customization](#customization).
+
+3. **Open in Obsidian** (optional) — point Obsidian at this directory for graph view, Dataview tables, and browsing. Install the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for dynamic queries.
 
 ## How It Works
 
