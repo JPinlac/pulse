@@ -600,3 +600,4 @@ Record significant changes to the system here. Date, what changed, why.
 | 2026-03-12 | Compact pulse briefing with fold-line suppression | Pulse now shows a compact view by default — batch gating + effort-level suppression collapse low-signal items into a fold-line. Full landscape on request ("unfold"). |
 | 2026-03-12 | Conversational Daily Note flow + defrag logging | Daily Note now accretes through /pulse conversation (not batch-generated). /defrag logs to Daily Note. /birdseyereview repositioned as periodic audit. /focus clarified as deep flow tool. |
 | 2026-03-12 | Background sub-agent capture | /capture now delegates to a background agent for zero context disruption. Main conversation flow is preserved. |
+| 2026-03-12 | /efforts skill + default efforts.yaml | Engine ships with a working efforts.yaml and sensible defaults. /efforts skill handles add, splinter, merge, review with litmus test and anti-spaghetti guidelines. |

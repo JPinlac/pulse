@@ -1,13 +1,13 @@
 ---
 name: birdseyereview
-description: Bird's-eye view of all efforts — scans all Maps for open loops, batches by context group, and produces a Daily note with everything visible. No suppression.
+description: Full landscape audit — scans all Maps with zero suppression. Use for periodic reviews, not daily agenda setting.
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Edit, Write
 ---
 
 ## Bird's-Eye Review
 
-Generate or update today's daily overview at `Daily/YYYY-MM-DD.md`. Shows every effort — nothing compressed or suppressed.
+Full audit of the vault landscape. Shows every effort with zero suppression — useful for weekly reviews, after a break, or when you need to see everything. For daily agenda, use `/pulse` and let it emerge from conversation.
 
 ### If no daily note exists for today:
 
