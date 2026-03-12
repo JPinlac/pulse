@@ -113,7 +113,8 @@ The user never writes frontmatter. Every `---` block is created and maintained b
         ├── triage/
         ├── focus/
         ├── review/
-        └── recompute/
+        ├── recompute/
+        └── defrag/
 ```
 
 ---
@@ -389,12 +390,12 @@ domains: [<slug>, ...]          # Filled during triage
 ### Session Start (`/pulse`)
 
 ```
-1. Read Home.md
-2. Read all Map frontmatter (priority_weight, open_loops, last_active)
-3. Read today's Daily note if it exists
-4. Count untriaged Inbox items
-5. If Maps/ is empty, bootstrap from efforts.yaml (see Bootstrap section)
-6. Present briefing: top priorities, inbox count, batch weights
+1. If Maps/ is empty, bootstrap from efforts.yaml (see Bootstrap section)
+2. Light defrag: auto-triage pending Inbox items, reconcile Map counts, flag stale Maps
+3. Read Home.md
+4. Read all Map frontmatter (priority_weight, open_loops, last_active)
+5. Read today's Daily note if it exists
+6. Present briefing: top priorities, batch weights
 7. Wait for direction
 ```
 
@@ -424,20 +425,19 @@ domains: [<slug>, ...]          # Filled during triage
 
 ```
 1. Create Inbox/YYYY-MM-DD-<slug>.md with capture frontmatter
-2. Suggest domain assignment, status, context_group
-3. Ask: triage now or leave for later?
+2. Confirm capture — auto-triage picks it up at next /pulse or /triage
 ```
 
-### Triage (`/triage`)
+### Auto-Triage (`/triage`)
 
 ```
 1. Find all Inbox items where triaged: false
-2. For each: present content, suggest domains/status/action
-3. On confirmation:
+2. For each: classify domains, status, context_group automatically
+3. Execute immediately (no confirmation):
    a. Create Note in Notes/ (or append to existing)
    b. Update relevant Map(s): add link, increment open_loops, update last_active
    c. Mark Inbox item triaged: true
-4. Report summary
+4. Log results to Daily note (Triage Log section)
 ```
 
 ### Focus Pivot (`/focus`)
@@ -450,16 +450,34 @@ domains: [<slug>, ...]          # Filled during triage
 5. Update Map last_active (recency boost)
 ```
 
-### End-of-Day Review (`/review`)
+### End-of-Session Review (`/review`)
 
 ```
-1. Read today's Daily note
-2. Present: completed / still open / emerged
-3. For each open item: defer, wait, done, or drop?
-4. Update Daily note: End of Day section, counts
-5. Update affected Notes: status, updated date
-6. Update affected Maps: open_loops, last_active
-7. Surface cross-effort insights
+1. Read today's Daily note and Map activity
+2. Present reflection narrative: what happened, what emerged, patterns & tensions
+3. Flag items needing human attention (deferred 3+ times, stale efforts, cross-domain tensions)
+4. Invite optional reflection — user can volunteer status changes
+5. Apply any status changes the user offers
+6. Auto-trigger /defrag (full pass) for all bookkeeping
+```
+
+### Defrag (`/defrag`)
+
+```
+Light pass (during /pulse):
+1. Auto-triage pending Inbox items
+2. Reconcile Map open_loops counts against actual Notes
+3. Flag stale Maps and overdue done→archive transitions
+
+Full pass (after /review or manual):
+All of the above, plus:
+4. Auto-defer unchecked Daily note items to tomorrow
+5. Auto-complete checked items (update Note status)
+6. Catch misclassifications from auto-triage
+7. Flag stale items (active Notes untouched 14+ days)
+8. Identify merge candidates (overlapping Notes in same domain)
+9. Update all timestamps (last_active on Maps, updated on Notes)
+10. Log everything done and flagged to Daily note (Defrag Log section)
 ```
 
 ### Priority Recomputation (`/recompute`)
@@ -513,13 +531,14 @@ Skills are defined in `.claude/skills/` and invoked as slash commands.
 
 | Skill | File | Trigger | Arguments |
 |-------|------|---------|-----------|
-| `/pulse` | `pulse/SKILL.md` | Session start | None |
+| `/pulse` | `pulse/SKILL.md` | Session start (includes light defrag) | None |
 | `/checklist` | `checklist/SKILL.md` | Generate/review daily list | Optional: date |
 | `/capture` | `capture/SKILL.md` | Quick capture | The thought to capture |
-| `/triage` | `triage/SKILL.md` | Process inbox | Optional: specific file |
+| `/triage` | `triage/SKILL.md` | Auto-process inbox (no confirmation) | Optional: specific file |
 | `/focus` | `focus/SKILL.md` | Pivot to effort | Effort name (flexible matching) |
-| `/review` | `review/SKILL.md` | End-of-day review | Optional: date |
+| `/review` | `review/SKILL.md` | End-of-session reflection + auto-defrag | Optional: date |
 | `/recompute` | `recompute/SKILL.md` | Refresh priority weights | Optional: effort spike |
+| `/defrag` | `defrag/SKILL.md` | Organizational cleanup (full pass) | Optional: `light` or `full` |
 
 ### Creating New Skills
 
@@ -544,6 +563,9 @@ Rationale for non-obvious choices, preserved for future reference.
 | Two-axis batching (domain + mode) | Domain switching (reloading a codebase/stakeholder world) is more expensive than mode switching (analytical→creative). The primary grouping axis is shared problem domain, with cognitive mode as a secondary signal. |
 | Soft suppression over hiding | Low-value batches are collapsed to a single line rather than omitted. This preserves awareness without prompting action — the user can always pivot if inspiration strikes. |
 | Inspiration override as first-class concept | Rigid systems get abandoned. Honoring impulse and energy produces better outcomes than forced compliance. |
+| Auto-triage (no confirmation) | Confirmation cycles impose cognitive load at exactly the wrong moment — transitioning back to work. Misclassification cost is low (defrag catches it); confirmation cost is real. |
+| Reflection-only review | Item-by-item "defer/wait/done/drop?" loops are bureaucratic, not reflective. The human's end-of-session energy is better spent on narrative reflection. All bookkeeping moves to defrag. |
+| Defrag as separate skill | Separates thinking (human) from filing (agent). Review is for reflection; defrag handles mechanics. Three entry points (post-review, pulse light pass, manual) ensure cleanup happens without human effort. |
 | Wikilinks over markdown links | Obsidian graph view. Refactoring-safe (rename propagation). Shorter syntax. |
 | 7-day done→archive window | Keeps completed items visible long enough to inform review, short enough to not clutter. |
 | efforts.yaml config | Decouples effort definitions from system code. New users define efforts once, engine reads dynamically. |
@@ -558,3 +580,4 @@ Record significant changes to the system here. Date, what changed, why.
 |------|--------|--------|
 | 2026-03-12 | Two-axis context batching (`shared_context` + `mindset`) | Original single-axis (mindset only) missed the dominant switching cost: problem domain. Two unrelated codebases incur massive context reload even in the same cognitive mode. |
 | 2026-03-12 | Batch gating / soft suppression in daily checklist | Low-value batches were forcing unnecessary context switches. Collapsed lines keep them visible without prompting action. |
+| 2026-03-12 | Auto-triage, reflective review, defrag | Item-by-item confirmation in triage and review imposed cognitive load at the worst moments. Triage now executes silently. Review is pure reflection. A new `/defrag` skill owns all organizational mechanics — runs after review (full), during pulse (light), or manually. |
