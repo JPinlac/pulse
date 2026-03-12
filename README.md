@@ -33,7 +33,7 @@ PULSE is an agent-first personal knowledge system built on Obsidian and Claude C
 | `/capture` | Capture a thought, idea, or task to Inbox |
 | `/triage` | Auto-process Inbox items into Notes and Maps |
 | `/focus [effort]` | Pivot to a specific effort — inspiration override |
-| `/review` | End-of-session reflection — what happened, what emerged |
+| `/review` | End-of-session reflection — what happened, what emerged. Auto-triggers defrag. |
 | `/recompute` | Recalculate all priority weights across Maps |
 | `/defrag` | Organizational cleanup — reconcile, defer, flag stale items |
 
@@ -57,7 +57,8 @@ Daily/               ← Generated checklists. One per day.
 Inbox/               ← Quick capture. Agent triages into Notes.
 Templates/           ← Obsidian templates for each file type.
 Queries/             ← Saved Dataview queries.
-efforts.yaml         ← Your effort definitions.
+efforts.yaml         ← Your effort definitions (created from example).
+efforts.example.yaml ← Example config shipped with the engine.
 CLAUDE.md            ← Agent conventions and protocol.
 SYSTEM.md            ← Full system design spec.
 ```
