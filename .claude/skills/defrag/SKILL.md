@@ -20,7 +20,11 @@ $ARGUMENTS can specify `light` or `full` (default: `full`).
 ### Light Pass (during `/pulse`)
 
 1. **Auto-triage Inbox** — run the auto-triage process on any `Inbox/` items where `triaged: false`. Match content against Maps to assign efforts, create Notes, update Maps. No confirmation needed.
-2. **Reconcile Map counts** — for each Map, count actual `active`/`waiting` Notes linked via `efforts[]` and compare to `open_loops` in frontmatter. Fix any mismatches.
+2. **Reconcile Map counts** — for each Map, compute `open_loops` as the sum of:
+   - Active/waiting Note files where `effort:` matches this Map's slug (status: active or waiting)
+   - Plain-text bullets in the Active Threads section: lines starting with `- ` that are NOT strikethrough (`~~...~~`), NOT checked (`- [x]`), and NOT indented (sub-bullets)
+
+   Compare the sum to `open_loops` in frontmatter. Fix any mismatches.
 3. **Flag obvious issues** — for each Map, determine its effective staleness threshold from the shortest `timescale` among its active Notes (default: weekly → 14 days if no Notes have timescale set). Flag Maps where `last_active` exceeds that threshold.
 4. **Report briefly** — one-line summary for the `/pulse` briefing: "Auto-triaged N items, reconciled M Map counts, K stale Maps flagged."
 
