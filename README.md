@@ -10,11 +10,15 @@ PULSE is an agent-first personal knowledge system built on Obsidian and Claude C
    cd my-vault
    ```
 
-2. **Define your efforts** — copy the example config and edit it:
-   ```bash
-   cp efforts.example.yaml efforts.yaml
+2. **Define your efforts** — tell Claude about the areas of your life you want to track:
    ```
-   Open `efforts.yaml` and define your efforts: name, slug, base_priority (1-10), context_batch, and purpose.
+   Create my efforts.yaml based on @efforts.example.yaml. Here are my efforts:
+   - Software engineering job (highest priority)
+   - Learning Japanese
+   - Fitness and nutrition
+   - A side project building a recipe app
+   ```
+   Claude will generate your `efforts.yaml` with proper slugs, priorities, context batches, and aliases.
 
 3. **Start a session** — open Claude Code in this directory and run:
    ```
