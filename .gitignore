@@ -4,8 +4,5 @@
 # Claude Code auto-memory (personal to each user)
 .claude/memory/
 
-# User-specific effort config (created from efforts.example.yaml)
-efforts.yaml
-
 # OS files
 .DS_Store
