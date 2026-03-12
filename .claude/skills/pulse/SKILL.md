@@ -20,7 +20,7 @@ You are the agent interface for a PULSE (Priority-Updated Living System Engine) 
 
 3. **Read `Home.md`** for the current focus dashboard and priority overview.
 
-4. **Scan all Maps** in `Maps/` — read each file's frontmatter to get `priority_weight`, `open_loops`, `last_active`, and `related_domains`.
+4. **Scan all Maps** in `Maps/` — read each file's frontmatter to get `priority_weight`, `open_loops`, `last_active`, and `related_efforts`.
 
 5. **Read today's Daily note** (`Daily/YYYY-MM-DD.md`) if it exists — check what's already been generated or completed.
 
@@ -53,7 +53,26 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 - **Housekeeping** renders as a single italic line (no section header), only if the light defrag did something. Call out stale Maps by name and days.
 - **No shared-context descriptions** — those are already internalized. Each batch is a single line with effort names and loop counts.
 
-7. **Full view on request** — if the user says "unfold", "full landscape", "show all", or similar at any point in the conversation, present:
+7. **Log suppression reasoning** — after generating the briefing (step 6), append a suppression trace to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
+
+   Format:
+   ```
+   ### Pulse Briefing — HH:MM
+
+   **Surfaced**: [effort] (X.XX), [effort] (X.XX), [effort] (X.XX)
+   **Suppressed batches**:
+   - [Batch]: combined weight X.XX < 40% of top (X.XX), no due dates, no stale waiting
+   **Suppressed efforts** (within shown batches):
+   - [effort]: 0 open loops, last_active [N] days ago, no due within 7d
+   **Resurfaced**: [note-slug] ([effort], [timescale] — [N] days since last touch)
+   **Light defrag**: triaged N inbox, reconciled N maps, flagged N stale
+   ```
+
+   Omit any section with zero items. The key value here is the suppression reasoning — it records *why* something wasn't shown, which is otherwise invisible and the hardest class of bug to trace.
+
+   If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
+
+8. **Full view on request** — if the user says "unfold", "full landscape", "show all", or similar at any point in the conversation, present:
 
 ```
 ### Full Landscape
@@ -71,9 +90,9 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 [Only if any Maps have last_active > 7 days. Otherwise omit.]
 ```
 
-8. **Wait for direction.** Do not assume what the user wants to work on. When the user indicates direction, build the day's agenda (step 9).
+9. **Wait for direction.** Do not assume what the user wants to work on. When the user indicates direction, build the day's agenda (step 10).
 
-9. **Build the Daily Note from conversation** — when the user indicates what they want to work on:
+10. **Build the Daily Note from conversation** — when the user indicates what they want to work on:
 
    a. Create `Daily/YYYY-MM-DD.md` if it doesn't exist (use Daily Note template frontmatter).
    b. Pull top items from the Maps the user indicated interest in — these go first, grouped by batch.
@@ -83,6 +102,9 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 
 ### Note on Inbox
 Inbox items are auto-triaged during the light defrag step. There is no separate "N items pending triage" line — by the time the briefing is presented, the Inbox should be clear. If auto-triage could not classify an item, mention it in the Housekeeping line.
+
+### Bootstrap
+If `Maps/` is empty (no `.md` files), run the `/efforts bootstrap` procedure before continuing with the pulse protocol.
 
 ### Key Principles
 - Lead with what matters, not what's overdue
