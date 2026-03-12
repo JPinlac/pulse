@@ -30,7 +30,7 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
    ```
    The agent walks you through setup and gives you a priority briefing. You're live.
 
-3. **Customize your efforts** — efforts are the persistent domains of your life (not tasks or projects). PULSE works best when efforts reflect how *you* actually spend your attention. Run `/efforts` to tailor them to your life, or add, splinter, merge, and review efforts at any time.
+3. **Customize your efforts** — efforts are the persistent domains of your life (not tasks or projects). **PULSE works best when efforts reflect how *you* actually spend your attention.** Run `/efforts` to tailor them to your life, or add, splinter, merge, and review efforts at any time. (In case the bolding didn't get your attention. *I highly recommend doing this!*)
 
 ## How It Works
 
