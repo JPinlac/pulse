@@ -87,7 +87,7 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 ├── Notes/                   All content notes. Flat directory.
 │   └── .keep
 │
-├── Daily/                   Generated checklists. YYYY-MM-DD.md.
+├── Daily/                   Session agenda + effort log. YYYY-MM-DD.md.
 │   └── .keep
 │
 ├── Templates/               Obsidian templates.
@@ -300,7 +300,8 @@ tags: [<tag>, ...]
 
 ```yaml
 ---
-type: <note|log|plan|reference|capture>
+type: note
+subtype: <note|log|plan|reference>  # What kind of content note
 efforts:                       # Which Maps this connects to (1 or more)
   - <slug>
 status: <active|someday|waiting|done|archived>
@@ -398,9 +399,10 @@ efforts: [<slug>, ...]          # Filled during triage
 6. Present compact briefing: top priorities, housekeeping (inline), active batches with loop counts
    — Apply batch gating + effort-level suppression (omit efforts with 0 loops + stale + no deadlines)
    — Suppressed batches/efforts collapse to a single fold-line ("say unfold for full landscape")
-7. Full view on request: all batches, all efforts, top threads, stale Maps
-8. Wait for direction
-9. Build Daily Note from conversation — when the user indicates what they want to work on:
+7. Log suppression reasoning to ## Session Log in Daily Note
+8. Full view on request: all batches, all efforts, top threads, stale Maps
+9. Wait for direction
+10. Build Daily Note from conversation — when the user indicates what they want to work on:
    — Pull focused items from indicated Maps, grouped by batch
    — Scan remaining Maps for time-sensitive/routine items (nothing falls through cracks)
    — Keep to 8-15 items. Present in chat for one confirmation pass, then write to file.
@@ -448,6 +450,7 @@ efforts: [<slug>, ...]          # Filled during triage
    b. Update relevant Map(s): add link, increment open_loops, update last_active
    c. Mark Inbox item triaged: true
 4. Report summary: "Auto-triaged N items: [title] → [effort], ..."
+5. Log classification decisions with match rationale to ## Session Log in Daily Note
 ```
 
 ### Focus Pivot (`/focus`)
@@ -479,7 +482,7 @@ efforts: [<slug>, ...]          # Filled during triage
 Light pass (during /pulse):
 1. Auto-triage pending Inbox items
 2. Reconcile Map open_loops counts against actual Notes
-3. Flag stale Maps (last_active > 7 days)
+3. Flag stale Maps (last_active exceeds threshold)
 4. Report briefly — one-line summary for the pulse briefing
 
 Full pass (after /close or manual):
@@ -491,7 +494,7 @@ All of the above, plus:
 9. Identify merge candidates (overlapping Notes in same effort)
 10. Update all timestamps (last_active on Maps, updated on Notes)
 11. Report structured summary of everything done and flagged
-12. Log to Daily Note — append timestamped one-liner under ## Defrag Log section
+12. Log to Daily Note — append per-decision trace under ## Session Log section (see defrag skill for format)
 ```
 
 ### Priority Recomputation (`/recompute`)
@@ -504,6 +507,7 @@ All of the above, plus:
 5. Compute new weights, update Map frontmatter
 6. Update Home.md Current Focus section
 7. Present table with full breakdown and change deltas
+8. Log weight snapshot with deltas and urgency sources to ## Session Log in Daily Note
 ```
 
 ---
@@ -570,7 +574,7 @@ Rationale for non-obvious choices, preserved for future reference.
 
 | Decision | Rationale |
 |----------|-----------|
-| Flat Notes/ directory | Deep nesting makes LLM traversal expensive. Domains are encoded in frontmatter, not folder paths. |
+| Flat Notes/ directory | Deep nesting makes LLM traversal expensive. Efforts are encoded in frontmatter, not folder paths. |
 | Computed priority (not manual) | Manual priority rot. Computed weights reflect reality without maintenance burden. |
 | Maps as source of truth (not a database) | Markdown files are human-readable, version-controllable, and Obsidian-native. No external dependencies. |
 | Agent-managed frontmatter | Removes friction from capture. Ensures schema consistency. User thinks; agent files. |
@@ -584,6 +588,9 @@ Rationale for non-obvious choices, preserved for future reference.
 | Wikilinks over markdown links | Obsidian graph view. Refactoring-safe (rename propagation). Shorter syntax. |
 | 7-day done→archive window | Keeps completed items visible long enough to inform review, short enough to not clutter. |
 | Maps as sole effort source | Effort definitions live in Map frontmatter. No intermediate config file. Ships with pre-built default Maps. |
+| effort_level over effort_estimate | Fibonacci hours had no consumer in the priority formula — pure metadata overhead. effort_level (trivial/small/medium/large) captures mental absorption — what actually matters for planning — without false precision. |
+| timescale field on Notes | The 7-day recency window creates a one-week memory horizon. Items with monthly or quarterly cadence drop off the radar unfairly. timescale lets defrag and pulse judge staleness relative to the item's natural rhythm, not a fixed window. |
+| Session Log — decision trace layer | Replaced one-liner defrag log with per-decision traces. Added persistent logging to /recompute (weight snapshots with deltas and urgency sources), /defrag (per-Map reconciliation, per-Note stale checks), /pulse (suppression reasoning for batches and efforts), and /triage (classification decisions with match rationale). All append to ## Session Log in Daily Note. Purely a debugging layer for tracing priority misses and suppression errors across sessions. |
 
 ---
 
@@ -600,3 +607,5 @@ Record significant changes to the system here. Date, what changed, why.
 | 2026-03-12 | Background sub-agent capture | /capture now delegates to a background agent for zero context disruption. Main conversation flow is preserved. |
 | 2026-03-12 | /efforts skill + pre-built default Maps | Engine ships with 3 default Maps. /efforts skill handles add, splinter, merge, review with litmus test and anti-spaghetti guidelines. |
 | 2026-03-12 | Eliminated efforts.yaml | Maps are the sole source of truth for effort definitions. Context batch definitions moved to CLAUDE.md. Pre-built default Maps replace YAML bootstrap. |
+| 2026-03-12 | Replace effort_estimate with effort_level + timescale | effort_level (trivial/small/medium/large) captures mental absorption. timescale (daily→annual) captures periodicity and addresses the 7-day recency bias for longer-cadence items. |
+| 2026-03-12 | Session Log — decision trace layer for debugging | Replaced one-liner defrag log with per-decision traces. Added persistent logging to /recompute, /defrag, /pulse, and /triage. All append to ## Session Log in Daily Note. |
