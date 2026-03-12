@@ -25,18 +25,18 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
 
 ### Steps
 
-1. **Read all Maps** in `Maps/` — extract `base_priority`, `last_active`, `open_loops`, `related_domains`.
+1. **Read all Maps** in `Maps/` — extract `base_priority`, `last_active`, `open_loops`, `related_efforts`.
 
 2. **Scan Notes** for urgency signals:
-   - Notes with `due` dates within 7 days → urgency_spike for their domains
+   - Notes with `due` dates within 7 days → urgency_spike for their efforts
    - Notes with `status: waiting` that have been waiting >3 days → slight urgency bump
 
 3. **Calculate recency** from `last_active` and Daily notes:
-   - Count how many of the last 7 daily notes touched each domain (via `domains_touched`)
+   - Count how many of the last 7 daily notes touched each effort (via `efforts_touched`)
    - Each touch = +0.03, capped at +0.15
 
 4. **Calculate effort** from recent note activity:
-   - Count notes in each domain updated in the last 7 days
+   - Count notes in each effort updated in the last 7 days
    - Sustained work (3+ notes updated) = +0.05 to +0.10
 
 5. **Compute and update** each Map's `priority_weight` in its frontmatter.

@@ -19,8 +19,8 @@ $ARGUMENTS can specify `light` or `full` (default: `full`).
 
 ### Light Pass (during `/pulse`)
 
-1. **Auto-triage Inbox** — run the auto-triage process on any `Inbox/` items where `triaged: false`. Match content against Maps to assign domains, create Notes, update Maps. No confirmation needed.
-2. **Reconcile Map counts** — for each Map, count actual `active`/`waiting` Notes linked via `domains[]` and compare to `open_loops` in frontmatter. Fix any mismatches.
+1. **Auto-triage Inbox** — run the auto-triage process on any `Inbox/` items where `triaged: false`. Match content against Maps to assign efforts, create Notes, update Maps. No confirmation needed.
+2. **Reconcile Map counts** — for each Map, count actual `active`/`waiting` Notes linked via `efforts[]` and compare to `open_loops` in frontmatter. Fix any mismatches.
 3. **Flag obvious issues** — note any Maps where `last_active` is >7 days stale.
 4. **Report briefly** — one-line summary for the `/pulse` briefing: "Auto-triaged N items, reconciled M Map counts, K stale Maps flagged."
 
@@ -32,11 +32,11 @@ Run everything in the light pass, plus:
 
 6. **Auto-mark done** — find items checked off in the Daily note (lines matching `- [x]`) and set their source Notes to `status: done` with `updated` set to today.
 
-7. **Catch misclassifications** — for each Note triaged today (or recently), read the content body and compare against the assigned `domains[]`. If the content clearly doesn't match the domain's Map purpose, flag it: "Possible misclassification: [note title] assigned to [effort] — content seems more like [suggested effort]."
+7. **Catch misclassifications** — for each Note triaged today (or recently), read the content body and compare against the assigned `efforts[]`. If the content clearly doesn't match the effort's Map purpose, flag it: "Possible misclassification: [note title] assigned to [effort] — content seems more like [suggested effort]."
 
 8. **Flag stale items** — active Notes with `updated` date 14+ days ago. Present as: "Stale: [note title] ([effort]) — last touched [date]. Still active?"
 
-9. **Merge candidates** — Notes in the same domain with overlapping titles or content. Present as: "Possible merge: [note A] and [note B] in [effort]."
+9. **Merge candidates** — Notes in the same effort with overlapping titles or content. Present as: "Possible merge: [note A] and [note B] in [effort]."
 
 10. **Update timestamps** — set `last_active` on any Maps that were touched during this session. Set `updated` on any Notes that were modified.
 

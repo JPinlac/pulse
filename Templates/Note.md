@@ -1,6 +1,6 @@
 ---
 type: note
-domains: []
+efforts: []
 status: active
 created: {{date}}
 updated: {{date}}

@@ -28,14 +28,14 @@ The content to capture is: $ARGUMENTS
 > source: agent
 > captured: YYYY-MM-DDTHH:MM:SS
 > triaged: false
-> domains: []
+> efforts: []
 > ---
 > # [Brief title derived from content]
 >
 > [The captured content, cleaned up slightly for readability but preserving intent]
 > ```
 > - Content to capture: [paste the $ARGUMENTS here]
-> - Speed over perfection — capture what was said, don't over-interpret or force-fit into domains.
+> - Speed over perfection — capture what was said, don't over-interpret or force-fit into efforts.
 > - If multiple distinct thoughts, create one file per thought.
 
 2. **Confirm immediately** — don't wait for the agent to finish. Report: "Captured: [title]. Filing in background — auto-triage will pick it up at next `/pulse` or `/triage`."
@@ -43,5 +43,5 @@ The content to capture is: $ARGUMENTS
 ### Principles
 - **Zero context disruption** — the main conversation must not lose flow
 - Speed over perfection — get it captured first, auto-triage files it later
-- Don't over-interpret. Capture what was said, don't force-fit into domains yet.
+- Don't over-interpret. Capture what was said, don't force-fit into efforts yet.
 - Multiple captures in one message are fine — one agent call handles all of them

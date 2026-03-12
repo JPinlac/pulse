@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Auto-process Inbox items into Notes and Maps — no confirmation needed. Assigns domains, creates Notes, updates Maps, reports what was done.
+description: Auto-process Inbox items into Notes and Maps — no confirmation needed. Assigns efforts, creates Notes, updates Maps, reports what was done.
 user-invocable: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
@@ -17,14 +17,14 @@ Process untriaged items from `Inbox/` into the PULSE system. Execute immediately
 
 3. **For each untriaged item**, analyze the content and execute:
 
-   a. **Match against Maps** — read the content and compare against Map purposes and active threads to determine the best `domains[]` assignment, `status`, and `context_group`.
+   a. **Match against Maps** — read the content and compare against Map purposes and active threads to determine the best `efforts[]` assignment, `status`, and `context_group`.
 
    b. **Create or append**:
-      - If the content is a new thread: create a Note in `Notes/` with proper frontmatter (type, domains, status, dates, effort_estimate, effort_actual, context_group, tags). Filename: `Notes/[descriptive-slug].md`
+      - If the content is a new thread: create a Note in `Notes/` with proper frontmatter (type, efforts, status, dates, effort_estimate, effort_actual, context_group, tags). Filename: `Notes/[descriptive-slug].md`
       - If the content clearly extends an existing Note: read the target note, append content, update `updated` date.
 
    c. **Update relevant Maps (compressed pointer)**:
-      - For each domain in the note's `domains[]`, read the corresponding Map
+      - For each effort in the note's `efforts[]`, read the corresponding Map
       - Add a compressed pointer under the appropriate section:
         `- [[note-slug]] — [≤15-word summary] (subtype, date)`
       - Do NOT inline note content or extended summaries into the Map
@@ -32,19 +32,19 @@ Process untriaged items from `Inbox/` into the PULSE system. Execute immediately
       - Update `last_active` to today
 
    d. **Mark capture as triaged**:
-      - Update the Inbox file's frontmatter: set `triaged: true` and fill in `domains[]`
+      - Update the Inbox file's frontmatter: set `triaged: true` and fill in `efforts[]`
 
 4. **Report summary**:
 
 ```
 Auto-triaged N items:
-- [title] → [domain(s)] (new note / appended to "[existing note]")
-- [title] → [domain(s)] (new note / appended to "[existing note]")
+- [title] → [effort(s)] (new note / appended to "[existing note]")
+- [title] → [effort(s)] (new note / appended to "[existing note]")
 ...
 ```
 
 ### Principles
 - **No confirmation cycles.** Execute immediately. The cost of a misclassified note is low — `/defrag` catches mistakes later.
-- Cross-domain notes are encouraged — don't force single-domain assignment
+- Cross-effort notes are encouraged — don't force single-effort assignment
 - If a capture could go multiple ways, pick the best match. Defrag will flag misclassifications.
 - $ARGUMENTS can optionally specify a specific Inbox file to triage
