@@ -34,15 +34,10 @@ domains: []
 [The captured content, cleaned up slightly for readability but preserving intent]
 ```
 
-3. **Suggest triage** — based on the content, suggest:
-   - Which `domains[]` it likely belongs to (match against existing Maps in `Maps/`)
-   - Whether it should become a new Note or append to an existing one
-   - A suggested `status` and `context_group`
-
-4. **Ask if the user wants to triage now** or leave it in the Inbox for later.
+3. **Confirm capture** — report what was captured and where it was filed. Auto-triage will pick it up at the next `/pulse` or `/triage`.
 
 ### Principles
-- Speed over perfection — get it captured first
-- Don't over-interpret. Capture what was said, suggest domains, but don't force-fit.
+- Speed over perfection — get it captured first, triage happens automatically later
+- Don't over-interpret. Capture what was said.
 - If the content clearly maps to an existing active thread in a Map, mention that connection
 - Multiple captures in one message are fine — create one file per distinct thought

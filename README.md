@@ -28,13 +28,14 @@ PULSE is an agent-first personal knowledge system built on Obsidian and Claude C
 
 | Command | What it does |
 |---------|-------------|
-| `/pulse` | Start a session — loads priorities, shows what matters now |
+| `/pulse` | Start a session — auto-triages Inbox, loads priorities, shows what matters now |
 | `/checklist` | Generate or review today's daily checklist |
 | `/capture` | Capture a thought, idea, or task to Inbox |
-| `/triage` | Process unread Inbox items into Notes and Maps |
+| `/triage` | Auto-process Inbox items into Notes and Maps |
 | `/focus [effort]` | Pivot to a specific effort — inspiration override |
-| `/review` | End-of-day review — close loops, defer, annotate |
+| `/review` | End-of-session reflection — what happened, what emerged |
 | `/recompute` | Recalculate all priority weights across Maps |
+| `/defrag` | Organizational cleanup — reconcile, defer, flag stale items |
 
 ## How It Works
 
