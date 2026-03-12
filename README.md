@@ -28,7 +28,7 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
    ```
    /pulse
    ```
-   That's it. The repo ships with 3 default efforts — **Work**, **Life Maintenance**, and **Personal Projects** — covering the universal domains of any knowledge worker. The agent generates Maps and gives you a priority briefing. You're live.
+   That's it. The repo ships with 3 default efforts — **Work**, **Life Maintenance**, and **Personal Projects** — as pre-built Maps covering the universal domains of any knowledge worker. The agent gives you a priority briefing. You're live.
 
    When you're ready to tailor efforts to your life, see [Customization](#customization).
 
@@ -94,7 +94,6 @@ Daily/               ← Generated checklists. One per day.
 Inbox/               ← Quick capture. Agent triages into Notes.
 Templates/           ← Obsidian templates for each file type.
 Queries/             ← Saved Dataview queries.
-efforts.yaml         ← Your effort definitions (ships with sensible defaults).
 CLAUDE.md            ← Agent conventions and protocol.
 SYSTEM.md            ← Full system design spec.
 ```
@@ -113,7 +112,7 @@ Use `/efforts` for all effort lifecycle operations:
 | `/efforts review` | Audit effort health — flag stale, overlapping, or orphaned efforts |
 
 ### Changing priorities
-Edit `base_priority` in `efforts.yaml` or directly in the Map's frontmatter (the Map is authoritative). Run `/recompute` to recalculate weights.
+Edit `base_priority` in the Map's frontmatter. Run `/recompute` to recalculate weights.
 
 ## Full Reference
 

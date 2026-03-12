@@ -11,7 +11,7 @@ You are the agent interface for a PULSE (Priority-Updated Living System Engine) 
 
 ### Protocol
 
-1. **Check for bootstrap** — if `Maps/` contains no `.md` files, read `efforts.yaml` and generate a Map for each effort using the Map template in `Templates/Map.md`. Populate frontmatter from the effort config (effort slug, base_priority, context_batch, purpose). Then proceed with step 2.
+1. **Check for bootstrap** — if `Maps/` contains no `.md` files, run the `/efforts` bootstrap procedure (present defaults or ask user to describe their life, then create Maps directly). Then proceed with step 2.
 
 2. **Light defrag** — before the briefing, silently run a light defrag pass:
    - Auto-triage any pending Inbox items (files where `triaged: false`) — classify, file into Notes, update Maps, no confirmation

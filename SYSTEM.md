@@ -78,12 +78,10 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 ├── SYSTEM.md                This file. Canonical system reference.
 ├── CLAUDE.md                Agent conventions. Quick-reference for LLM behavior.
 ├── README.md                Setup guide and command reference.
-├── efforts.yaml             Effort definitions. Ships with sensible defaults — edit in place.
-│
 ├── Inbox/                   Zero-friction capture. Quick thoughts.
 │   └── .keep
 │
-├── Maps/                    One MOC per effort. Generated from efforts.yaml on first run.
+├── Maps/                    One MOC per effort. Source of truth. Ships with defaults.
 │   └── .keep
 │
 ├── Notes/                   All content notes. Flat directory.
@@ -125,12 +123,11 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 
 Every endeavor in your life maps to exactly one effort. Each effort has a Map file that serves as its source of truth.
 
-Efforts are defined in `efforts.yaml`. Here's the format:
+Efforts are defined by their Map files in `Maps/`. Each Map's frontmatter contains:
 
 | Field | Description | Example |
 |-------|-------------|---------|
-| `name` | Human-readable name (Map title) | "My Job" |
-| `slug` | Lowercase, hyphenated identifier (used in frontmatter) | `my-job` |
+| `effort` | Lowercase, hyphenated identifier (slug) | `my-job` |
 | `base_priority` | Life-importance anchor, 1-10 | 9 |
 | `context_batch` | Group name for context switching | "Work" |
 | `purpose` | One-line description of why this matters | "Day job, pays the bills" |
@@ -147,7 +144,7 @@ These connections surface as `related_efforts` in Map frontmatter and help the a
 
 ### Managing Efforts
 
-Use `/efforts` for all effort lifecycle operations — add, splinter, merge, review. The skill handles `efforts.yaml`, Map creation/migration, and documentation updates.
+Use `/efforts` for all effort lifecycle operations — add, splinter, merge, review. The skill handles Map creation/migration and documentation updates.
 
 | Command | What it does |
 |---------|-------------|
@@ -173,10 +170,10 @@ If switching between two efforts requires reloading a different mental model (co
 
 ### Defining Batches
 
-Context batches are defined in `efforts.yaml` alongside your efforts. Each batch has two fields:
+Context batch definitions live in `CLAUDE.md` as agent guidance. Each effort's batch assignment is stored in its Map's `context_batch` frontmatter field. Each batch has two axes:
 
-- **shared_context** (list) — concrete elements shared across efforts in the batch: tools, codebases, environments, knowledge domains, stakeholder worlds. This is the primary grouping axis.
-- **mindset** (string) — the cognitive mode/energy state. This is the secondary axis, carried forward from the original design.
+- **shared_context** — concrete elements shared across efforts in the batch: tools, codebases, environments, knowledge domains, stakeholder worlds. This is the primary grouping axis.
+- **mindset** — the cognitive mode/energy state. This is the secondary axis.
 
 Example:
 
@@ -289,6 +286,8 @@ effort: <slug>                  # Canonical effort identifier
 context_batch: <batch-name>     # Context batch for grouping
 priority_weight: <0.0-1.0>     # Computed. Never manually set.
 base_priority: <1-10>          # Life-importance anchor. Rarely changes.
+purpose: <string>              # One-line description of why this effort matters
+aliases: [<alias>, ...]        # Optional flexible-match terms for /focus resolution
 last_active: <YYYY-MM-DD>      # Last date this effort was touched
 open_loops: <int>              # Count of active/waiting items linked to this Map
 related_efforts:               # Cross-effort connections
@@ -307,8 +306,8 @@ efforts:                       # Which Maps this connects to (1 or more)
 status: <active|someday|waiting|done|archived>
 created: <YYYY-MM-DD>
 updated: <YYYY-MM-DD>
-effort_estimate: <1h|2h|3h|5h|8h|13h|21h>  # Fibonacci time estimate
-effort_actual: null                # Actual time spent (accreted during sessions)
+effort_level: <trivial|small|medium|large|null>  # Mental absorption required
+timescale: <daily|weekly|monthly|quarterly|biannual|annual|null>  # Natural periodicity
 due: <YYYY-MM-DD|null>         # Optional deadline
 context_group: <batch-name|null>
 tags: [<tag>, ...]
@@ -391,7 +390,7 @@ efforts: [<slug>, ...]          # Filled during triage
 ### Session Start (`/pulse`)
 
 ```
-1. If Maps/ is empty, bootstrap from efforts.yaml (see Bootstrap section)
+1. If Maps/ has no .md files, bootstrap by creating default Maps (see Bootstrap section)
 2. Light defrag: auto-triage pending Inbox items, reconcile Map counts, flag stale Maps
 3. Read Home.md
 4. Read all Map frontmatter (priority_weight, open_loops, last_active)
@@ -412,9 +411,9 @@ efforts: [<slug>, ...]          # Filled during triage
 
 ```
 1. Check if Maps/ directory has any .md files
-2. If empty, read efforts.yaml
-3. For each effort: generate a Map file using the Map template
-4. Populate frontmatter from effort config (effort slug, base_priority, context_batch, purpose)
+2. If empty, present 3 default efforts (Work, Life Maintenance, Personal Projects)
+3. Ask: "Want to start with these, or tell me about your life and I'll tailor them?"
+4. Create Maps directly with full frontmatter (effort, base_priority, context_batch, purpose, aliases)
 5. Proceed with normal pulse briefing
 ```
 
@@ -584,7 +583,7 @@ Rationale for non-obvious choices, preserved for future reference.
 | Defrag as separate skill | Separates thinking (human) from filing (agent). Review is for reflection; defrag handles mechanics. Three entry points (post-review, pulse light pass, manual) ensure cleanup happens without human effort. |
 | Wikilinks over markdown links | Obsidian graph view. Refactoring-safe (rename propagation). Shorter syntax. |
 | 7-day done→archive window | Keeps completed items visible long enough to inform review, short enough to not clutter. |
-| efforts.yaml config | Decouples effort definitions from system code. New users define efforts once, engine reads dynamically. |
+| Maps as sole effort source | Effort definitions live in Map frontmatter. No intermediate config file. Ships with pre-built default Maps. |
 
 ---
 
@@ -595,9 +594,9 @@ Record significant changes to the system here. Date, what changed, why.
 | Date | Change | Reason |
 |------|--------|--------|
 | 2026-03-12 | Redesign: auto-triage, reflective review, defrag | Triage drops confirmation loops, review becomes pure reflection, new /defrag skill absorbs all bookkeeping. Separates thinking (human) from filing (agent). |
-| 2026-03-12 | Two-axis context batching with soft suppression | Batches now defined by shared_context (domain) and mindset (cognitive mode). Low-value batches are soft-suppressed in daily checklists and pulse briefings. Batch metadata lives in efforts.yaml. |
-| 2026-03-12 | Created efforts.yaml as canonical effort/batch config | Single source of truth for effort definitions, batch groupings, and domain aliases. Documentation and skills defer to this file. |
+| 2026-03-12 | Two-axis context batching with soft suppression | Batches now defined by shared_context (domain) and mindset (cognitive mode). Low-value batches are soft-suppressed in daily checklists and pulse briefings. Batch definitions live in CLAUDE.md. |
 | 2026-03-12 | Compact pulse briefing with fold-line suppression | Pulse now shows a compact view by default — batch gating + effort-level suppression collapse low-signal items into a fold-line. Full landscape on request ("unfold"). |
 | 2026-03-12 | Conversational Daily Note flow + defrag logging | Daily Note now accretes through /pulse conversation (not batch-generated). /defrag logs to Daily Note. /birdseyereview repositioned as periodic audit. /focus clarified as deep flow tool. |
 | 2026-03-12 | Background sub-agent capture | /capture now delegates to a background agent for zero context disruption. Main conversation flow is preserved. |
-| 2026-03-12 | /efforts skill + default efforts.yaml | Engine ships with a working efforts.yaml and sensible defaults. /efforts skill handles add, splinter, merge, review with litmus test and anti-spaghetti guidelines. |
+| 2026-03-12 | /efforts skill + pre-built default Maps | Engine ships with 3 default Maps. /efforts skill handles add, splinter, merge, review with litmus test and anti-spaghetti guidelines. |
+| 2026-03-12 | Eliminated efforts.yaml | Maps are the sole source of truth for effort definitions. Context batch definitions moved to CLAUDE.md. Pre-built default Maps replace YAML bootstrap. |

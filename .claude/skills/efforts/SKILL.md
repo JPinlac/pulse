@@ -8,7 +8,7 @@ argument-hint: [add | splinter <slug> | merge <slug> <slug> | review]
 
 ## Effort Lifecycle Management
 
-You manage the `efforts.yaml` configuration and associated Maps for PULSE.
+You manage Maps in `Maps/` for PULSE. Each Map's frontmatter is the sole source of truth for effort definitions.
 
 ### Parse Intent
 
@@ -24,15 +24,15 @@ Read `$ARGUMENTS` to determine the action:
 
 ### Bootstrap
 
-If `efforts.yaml` does not exist when any action is attempted:
+If `Maps/` contains no `.md` files when any action is attempted:
 
 1. Present the 3 default efforts:
    - **Work** (slug: `work`, priority: 9, batch: Work) — "Primary professional obligation"
    - **Life Maintenance** (slug: `maintenance`, priority: 7, batch: Maintenance) — "Health, home, chores, admin — things that rot if ignored"
    - **Personal Projects** (slug: `personal-projects`, priority: 5, batch: Projects) — "Creative and growth work you do for yourself"
 2. Ask: "Want to start with these, or tell me about your life and I'll tailor them?"
-3. If the user accepts defaults → write `efforts.yaml` with the 3 defaults and 3 context batches, create Maps in `Maps/`
-4. If the user describes their life → generate a tailored `efforts.yaml` (aim for 3-5 efforts to start), create Maps
+3. If the user accepts defaults → create 3 Maps in `Maps/` with full frontmatter (including purpose and aliases)
+4. If the user describes their life → generate tailored Maps directly (aim for 3-5 efforts to start)
 5. Run the Sync Slug Table procedure
 6. After bootstrap, proceed with the originally requested action (or `/pulse` if they came from there)
 
@@ -40,12 +40,12 @@ If `efforts.yaml` does not exist when any action is attempted:
 
 ### Sync Slug Table
 
-After any mutation to `efforts.yaml` (add, splinter, merge, bootstrap), update the slug cache in root `CLAUDE.md`:
+After any mutation to Maps (add, splinter, merge, bootstrap), update the slug cache in root `CLAUDE.md`:
 
-1. Read `efforts.yaml` for the current active effort list
+1. Read all Maps in `Maps/` — extract `effort`, `context_batch`, and `aliases` from frontmatter
 2. Find the block between `<!-- SLUG-TABLE-START` and `<!-- SLUG-TABLE-END -->`
-3. Replace with a fresh table: columns `Slug`, `Batch`, `Aliases`; sorted by batch (alpha) then base_priority desc; skip archived efforts
-4. If sentinels don't exist in `CLAUDE.md`, insert the full block under `## Effort & Batch Definitions`
+3. Replace with a fresh table: columns `Slug`, `Batch`, `Aliases`; sorted by batch (alpha) then base_priority desc; skip archived Maps (status: archived in frontmatter)
+4. If sentinels don't exist in `CLAUDE.md`, insert the full block under `## Efforts & Domain Slugs`
 
 Self-healing — any mutation auto-corrects drift.
 
@@ -53,9 +53,8 @@ Self-healing — any mutation auto-corrects drift.
 
 ### Status (default)
 
-1. Read `efforts.yaml`
-2. Read all Maps in `Maps/` — get `priority_weight`, `open_loops`, `last_active` from frontmatter
-3. Present:
+1. Read all Maps in `Maps/` — get `effort`, `context_batch`, `base_priority`, `purpose`, `priority_weight`, `open_loops`, `last_active` from frontmatter
+2. Present:
 
 ```
 ## Efforts — Current Landscape
@@ -67,7 +66,7 @@ Self-healing — any mutation auto-corrects drift.
 [N] efforts across [N] batches.
 ```
 
-4. End with: "Use `/efforts add`, `/efforts splinter <slug>`, `/efforts merge <slug> <slug>`, or `/efforts review`."
+3. End with: "Use `/efforts add`, `/efforts splinter <slug>`, `/efforts merge <slug> <slug>`, or `/efforts review`."
 
 ---
 
@@ -87,8 +86,8 @@ If the litmus test passes:
 2. Suggest a slug (user confirms)
 3. Suggest a `base_priority` based on their description (user confirms)
 4. Assign to an existing `context_batch`. Creating a new batch is fine if the existing ones genuinely don't fit — the user knows their cognitive landscape better than the system does.
-5. Append to `efforts.yaml`
-6. Create the Map in `Maps/` using the Map template frontmatter
+5. Ask for aliases (optional flexible-match terms for `/focus` resolution)
+6. Create the Map in `Maps/` with full frontmatter (effort, context_batch, base_priority, purpose, aliases)
 7. Report what was created
 8. Run the Sync Slug Table procedure
 
@@ -102,14 +101,13 @@ Splitting an effort that has grown too complex into sub-efforts.
 2. Ask: "Which of these feel like genuinely different mental contexts?"
 3. The user identifies the split
 4. For each new effort:
-   - Propose name, slug, purpose
+   - Propose name, slug, purpose, aliases
    - Inherit the parent's `context_batch` and `base_priority` by default (user can adjust)
    - Run a light litmus check — splintering usually passes by nature, but confirm the split isn't premature
-5. Create new Maps, migrate relevant threads from the parent Map
-6. Archive the parent effort: set its Map status to `archived`, remove from active efforts in `efforts.yaml` (keep a YAML comment noting what it splintered into)
-7. Update `efforts.yaml` with new efforts
-8. Report: what was created, what was migrated, what was archived
-9. Run the Sync Slug Table procedure
+5. Create new Maps with full frontmatter, migrate relevant threads from the parent Map
+6. Archive the parent Map: set `status: archived` in its frontmatter
+7. Report: what was created, what was migrated, what was archived
+8. Run the Sync Slug Table procedure
 
 **Guard**: If the parent effort has fewer than 3 active threads, flag that the split may be premature. The user can override.
 
@@ -121,23 +119,20 @@ Combining two efforts that have converged or where one has become redundant.
 
 1. Read both Maps
 2. Ask for the merged effort's name (can be one of the originals or new)
-3. Propose slug, priority (suggest the higher of the two), batch
+3. Propose slug, priority (suggest the higher of the two), batch, aliases (union of both)
 4. Combine threads into the merged Map, deduplicating
-5. Archive the absorbed effort(s): set Map status to `archived`, add YAML comment in `efforts.yaml` noting the merge
-6. Update `efforts.yaml`
-7. Report: what was merged, what threads were combined
-8. Run the Sync Slug Table procedure
+5. Archive the absorbed Map(s): set `status: archived` in frontmatter
+6. Report: what was merged, what threads were combined
+7. Run the Sync Slug Table procedure
 
 ---
 
 ### Review
 
-Audit all efforts for health signals. Read `efforts.yaml` and all Maps, then report:
+Audit all efforts for health signals. Read all Maps in `Maps/`, then report:
 
 - **Stale**: 0 open loops AND `last_active` > 30 days → suggest archival or check-in
-- **Overlapping purpose**: Two efforts whose purpose statements substantially overlap → suggest merge
-- **Orphaned**: Effort exists in `efforts.yaml` but has no Map → flag for Map creation
-- **Ghost Maps**: Map exists in `Maps/` but no matching effort in `efforts.yaml` → flag
+- **Overlapping purpose**: Two Maps whose `purpose` fields substantially overlap → suggest merge
 - **Thread-heavy**: Any effort with 8+ active threads → suggest it might be ready to splinter
 
 Present findings conversationally. Don't auto-fix — let the user decide.
@@ -155,20 +150,20 @@ These are quality signals, not hard rules. Surface them during `add` and `splint
 
 ---
 
-### efforts.yaml Format Reference
+### Map Frontmatter Reference
 
 ```yaml
-efforts:
-  - name: "Human-readable name"
-    slug: lowercase-hyphenated
-    base_priority: 1-10
-    context_batch: BatchName
-    purpose: "One-line why this matters"
-    aliases: [optional, flexible-match, terms]
-
-context_batches:
-  - name: BatchName
-    shared_context:
-      - "What tools/environments/stakeholders live here"
-    mindset: "What cognitive mode this batch operates in"
+---
+type: map
+effort: lowercase-hyphenated
+context_batch: BatchName
+priority_weight: 0.5
+base_priority: 1-10
+purpose: "One-line why this matters"
+aliases: [optional, flexible-match, terms]
+last_active: YYYY-MM-DD
+open_loops: 0
+related_efforts: []
+tags: []
+---
 ```
