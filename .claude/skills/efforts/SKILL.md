@@ -43,7 +43,7 @@ After any mutation to Maps (add, splinter, merge, bootstrap), update the slug ca
 1. Read all Maps in `Maps/` for the current active effort list (from frontmatter)
 2. Find the block between `<!-- SLUG-TABLE-START` and `<!-- SLUG-TABLE-END -->`
 3. Replace with a fresh table: columns `Slug`, `Batch`, `Aliases`; sorted by batch (alpha) then base_priority desc; skip archived efforts
-4. If sentinels don't exist in `CLAUDE.md`, insert the full block under `## Efforts & Domain Slugs`
+4. If sentinels don't exist in `CLAUDE.md`, insert the full block under `## Efforts & Slugs`
 
 Self-healing — any mutation auto-corrects drift.
 
