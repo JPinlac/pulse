@@ -24,15 +24,11 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
    cd my-vault
    ```
 
-2. **Define your efforts** — tell Claude about the areas of your life you want to track:
+2. **Customize your efforts** — the repo ships with 3 default efforts (Work, Life Maintenance, Personal Projects). Edit `efforts.yaml` directly, or run `/efforts` and let the agent guide you:
    ```
-   Create my efforts.yaml based on @efforts.example.yaml. Here are my efforts:
-   - Software engineering job (highest priority)
-   - Learning Japanese
-   - Fitness and nutrition
-   - A side project building a recipe app
+   /efforts
    ```
-   Claude will generate your `efforts.yaml` with proper slugs, priorities, context batches, and aliases.
+   As your needs grow, use `/efforts add` to create new efforts or `/efforts splinter work` to break a complex effort into sub-efforts.
 
 3. **Start a session** — open Claude Code in this directory and run:
    ```
@@ -68,6 +64,7 @@ You never touch frontmatter. You never manually file things. You say what's on y
 | `/focus [effort]` | Deep flow on one effort — inspiration override |
 | `/capture` | Quick-capture a thought or task to Inbox |
 | `/birdseyereview` | Full landscape audit — zero suppression |
+| `/efforts` | Manage efforts — add, splinter, merge, review |
 
 ### Automatic
 
@@ -101,22 +98,23 @@ Daily/               ← Generated checklists. One per day.
 Inbox/               ← Quick capture. Agent triages into Notes.
 Templates/           ← Obsidian templates for each file type.
 Queries/             ← Saved Dataview queries.
-efforts.yaml         ← Your effort definitions (created from example).
-efforts.example.yaml ← Example config shipped with the engine.
+efforts.yaml         ← Your effort definitions (ships with sensible defaults).
 CLAUDE.md            ← Agent conventions and protocol.
 SYSTEM.md            ← Full system design spec.
 ```
 
 ## Customization
 
-### Adding an effort
-Ask Claude to add a new life effort. It will update `efforts.yaml`, generate the Map, and wire everything up.
+### Managing efforts
+Use `/efforts` for all effort lifecycle operations:
 
-### Removing an effort
-Run `/focus [effort]`, mark remaining items as done or archived, then delete the Map file and remove the entry from `efforts.yaml`.
-
-### Adjusting context batches
-Edit the `context_batches` section in `efforts.yaml` and update the `context_batch` field in relevant Maps. The agent reads batches dynamically.
+| Command | What it does |
+|---------|-------------|
+| `/efforts` | Show current effort landscape |
+| `/efforts add` | Guided creation with a litmus test to prevent bloat |
+| `/efforts splinter <slug>` | Break a complex effort into sub-efforts |
+| `/efforts merge <slug> <slug>` | Combine two efforts that have converged |
+| `/efforts review` | Audit effort health — flag stale, overlapping, or orphaned efforts |
 
 ### Changing priorities
 Edit `base_priority` in `efforts.yaml` or directly in the Map's frontmatter (the Map is authoritative). Run `/recompute` to recalculate weights.

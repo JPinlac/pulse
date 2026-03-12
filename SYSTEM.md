@@ -78,8 +78,7 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 ├── SYSTEM.md                This file. Canonical system reference.
 ├── CLAUDE.md                Agent conventions. Quick-reference for LLM behavior.
 ├── README.md                Setup guide and command reference.
-├── efforts.yaml             User's effort definitions (copied from efforts.example.yaml).
-├── efforts.example.yaml     Example effort config shipped with the engine.
+├── efforts.yaml             Effort definitions. Ships with sensible defaults — edit in place.
 │
 ├── Inbox/                   Zero-friction capture. Quick thoughts.
 │   └── .keep
@@ -114,7 +113,8 @@ The user never writes frontmatter. Every `---` block is created and maintained b
         ├── focus/
         ├── close/
         ├── recompute/
-        └── defrag/
+        ├── defrag/
+        └── efforts/
 ```
 
 ---
@@ -145,20 +145,17 @@ Efforts are not siloed. They feed each other. When defining your efforts, consid
 
 These connections surface as `related_domains` in Map frontmatter and help the agent identify cross-pollination opportunities.
 
-### Adding or Removing Efforts
+### Managing Efforts
 
-To add an effort:
-1. Add the entry to `efforts.yaml` (slug, base_priority, context_batch, purpose, aliases)
-2. Create a new Map in `Maps/` using the Map template (or run `/pulse` and the agent will generate it)
-3. Assign a `domain` slug (lowercase, hyphens)
-4. Set `base_priority` (1-10 scale relative to existing efforts)
-5. Add to the relevant context batch
+Use `/efforts` for all effort lifecycle operations — add, splinter, merge, review. The skill handles `efforts.yaml`, Map creation/migration, and documentation updates.
 
-To retire an effort:
-1. Set all linked notes to `status: archived`
-2. Set the Map's `open_loops` to 0
-3. Move the Map to an `Archive/` directory (create if needed)
-4. Remove from `efforts.yaml`
+| Command | What it does |
+|---------|-------------|
+| `/efforts` | Show current effort landscape |
+| `/efforts add` | Guided creation with a litmus test to prevent bloat |
+| `/efforts splinter <slug>` | Break a complex effort into sub-efforts |
+| `/efforts merge <slug> <slug>` | Combine two efforts that have converged |
+| `/efforts review` | Audit effort health — flag stale, overlapping, or orphaned efforts |
 
 ---
 
@@ -556,6 +553,7 @@ Skills are defined in `.claude/skills/` and invoked as slash commands.
 | `/close` | `close/SKILL.md` | End-of-session reflection + auto-defrag | Optional: date |
 | `/recompute` | `recompute/SKILL.md` | Refresh priority weights | Optional: effort spike |
 | `/defrag` | `defrag/SKILL.md` | Organizational cleanup (full pass) | Optional: `light` or `full` |
+| `/efforts` | `efforts/SKILL.md` | Manage effort lifecycle | `add`, `splinter <slug>`, `merge <slug> <slug>`, `review` |
 
 ### Creating New Skills
 
