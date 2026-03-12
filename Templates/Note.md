@@ -4,7 +4,8 @@ domains: []
 status: active
 created: {{date}}
 updated: {{date}}
-effort_estimate: small
+effort_estimate: null
+effort_actual: null
 due: null
 context_group: null
 tags: []
