@@ -34,10 +34,10 @@ domains: []
 [The captured content, cleaned up slightly for readability but preserving intent]
 ```
 
-3. **Confirm capture** — report what was captured and where it was filed. Auto-triage will pick it up at the next `/pulse` or `/triage`.
+3. **Confirm capture** — report what was captured: "Captured: [title]. It's in the Inbox — auto-triage will pick it up at next `/pulse` or `/triage`."
 
 ### Principles
-- Speed over perfection — get it captured first, triage happens automatically later
-- Don't over-interpret. Capture what was said.
+- Speed over perfection — get it captured first, auto-triage files it later
+- Don't over-interpret. Capture what was said, don't force-fit into domains yet.
 - If the content clearly maps to an existing active thread in a Map, mention that connection
 - Multiple captures in one message are fine — create one file per distinct thought

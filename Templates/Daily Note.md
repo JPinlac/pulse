@@ -18,10 +18,7 @@ items_deferred: 0
 ## Context C: [domain group] [weight: X.XX]
 - [ ] Item [[linked note]]
 
----
-## Deferred Batches
-<!-- Soft-suppressed batches: visible but not worth a context switch today -->
-> ~[Batch Name] [weight: X.XX] — N items, nothing urgent
+> ~[Suppressed Batch] [weight: X.XX] — N items, nothing urgent
 
 ---
 ## Annotations

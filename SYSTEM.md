@@ -134,6 +134,7 @@ Efforts are defined in `efforts.yaml`. Here's the format:
 | `base_priority` | Life-importance anchor, 1-10 | 9 |
 | `context_batch` | Group name for context switching | "Work" |
 | `purpose` | One-line description of why this matters | "Day job, pays the bills" |
+| `aliases` | Optional flexible-match terms for `/focus` resolution | `[job, work]` |
 
 ### Effort Interconnections
 
@@ -147,7 +148,7 @@ These connections surface as `related_domains` in Map frontmatter and help the a
 ### Adding or Removing Efforts
 
 To add an effort:
-1. Add the entry to `efforts.yaml`
+1. Add the entry to `efforts.yaml` (slug, base_priority, context_batch, purpose, aliases)
 2. Create a new Map in `Maps/` using the Map template (or run `/pulse` and the agent will generate it)
 3. Assign a `domain` slug (lowercase, hyphens)
 4. Set `base_priority` (1-10 scale relative to existing efforts)
@@ -194,18 +195,20 @@ When generating daily checklists, batches are ordered by **combined priority wei
 
 ### Batch Gating (Soft Suppression)
 
-Not every batch is worth a context switch on a given day. After ordering batches by combined weight, the checklist identifies **low-value batches** that should be visible but de-emphasized:
+Not every batch is worth a context switch on a given day. After ordering batches by combined weight, the checklist and pulse briefing soft-suppress low-value batches — visible but de-emphasized.
 
-A batch is soft-suppressed when ALL of the following are true:
+A batch is soft-suppressed when **all** of the following are true:
 - Combined weight is below **40%** of the top batch's combined weight
-- No items have a `due` date within 7 days
+- No items with `due` dates within 7 days
 - No `status: waiting` items older than 3 days
 
-Suppressed batches render as a single collapsed line in the daily note instead of a full section:
+In checklists, suppressed batches render as a single collapsed line:
 
 ```
 > ~[Batch Name] [weight: X.XX] — N items, nothing urgent
 ```
+
+In pulse, suppressed batches collapse into a fold-line count (e.g., "3 efforts across 2 batches below the fold"). Say "unfold" for the full landscape.
 
 This keeps them visible (you can always expand/pivot) without prompting action on batches that aren't worth the switching cost today.
 
@@ -286,7 +289,7 @@ All frontmatter is agent-managed. These schemas are the contract between the vau
 ---
 type: map
 domain: <slug>                  # Canonical effort identifier
-context_batch: <batch-name>     # Context batch for grouping (optional)
+context_batch: <batch-name>     # Context batch for grouping
 priority_weight: <0.0-1.0>     # Computed. Never manually set.
 base_priority: <1-10>          # Life-importance anchor. Rarely changes.
 last_active: <YYYY-MM-DD>      # Last date this effort was touched
@@ -395,8 +398,11 @@ domains: [<slug>, ...]          # Filled during triage
 3. Read Home.md
 4. Read all Map frontmatter (priority_weight, open_loops, last_active)
 5. Read today's Daily note if it exists
-6. Present briefing: top priorities, batch weights
-7. Wait for direction
+6. Present compact briefing: top priorities, housekeeping (inline), active batches with loop counts
+   — Apply batch gating + effort-level suppression (omit efforts with 0 loops + stale + no deadlines)
+   — Suppressed batches/efforts collapse to a single fold-line ("say unfold for full landscape")
+7. Full view on request: all batches, all efforts, top threads, stale Maps
+8. Wait for direction
 ```
 
 ### Bootstrap (first run)
@@ -414,9 +420,9 @@ domains: [<slug>, ...]          # Filled during triage
 ```
 1. Scan all Maps for open loops and active threads
 2. Scan Notes for active/waiting items with approaching due dates
-3. Group items by context batch (read from Map frontmatter or efforts.yaml)
+3. Group items by context batch to minimize context switching
 4. Sort batches by combined weight, items within by effort weight
-5. Apply batch gating: soft-suppress low-value batches (see Section 5)
+5. Apply batch gating — soft-suppress low-value batches (see Section 5)
 6. Generate Daily/YYYY-MM-DD.md — max 10-12 items across full batches
 7. Each item links to its source Note or Map section
 ```
@@ -425,40 +431,42 @@ domains: [<slug>, ...]          # Filled during triage
 
 ```
 1. Create Inbox/YYYY-MM-DD-<slug>.md with capture frontmatter
-2. Confirm capture — auto-triage picks it up at next /pulse or /triage
+2. Confirm capture: "Captured: [title]. It's in the Inbox — auto-triage picks it up at next /pulse or /triage."
 ```
 
 ### Auto-Triage (`/triage`)
 
 ```
 1. Find all Inbox items where triaged: false
-2. For each: classify domains, status, context_group automatically
-3. Execute immediately (no confirmation):
+2. For each: match content against Maps, assign domains/status — no confirmation
+3. Execute immediately:
    a. Create Note in Notes/ (or append to existing)
    b. Update relevant Map(s): add link, increment open_loops, update last_active
    c. Mark Inbox item triaged: true
-4. Log results to Daily note (Triage Log section)
+4. Report summary: "Auto-triaged N items: [title] → [domain], ..."
 ```
 
 ### Focus Pivot (`/focus`)
 
 ```
-1. Resolve effort from flexible input (match against Map filenames and domain slugs)
+1. Resolve effort from flexible input (match against names, slugs, and aliases — case-insensitive, partial match)
 2. Load the Map
 3. Show active threads, related notes, related maps
 4. Log context switch in daily note
 5. Update Map last_active (recency boost)
 ```
 
-### End-of-Session Review (`/review`)
+### End-of-Session Reflection (`/review`)
 
 ```
 1. Read today's Daily note and Map activity
-2. Present reflection narrative: what happened, what emerged, patterns & tensions
-3. Flag items needing human attention (deferred 3+ times, stale efforts, cross-domain tensions)
-4. Invite optional reflection — user can volunteer status changes
-5. Apply any status changes the user offers
-6. Auto-trigger /defrag (full pass) for all bookkeeping
+2. Read relevant Maps and Notes for context on what moved today
+3. Present reflection narrative: what happened, what emerged, patterns
+4. Flag items needing human attention (deferred 3+ times, efforts gone dark, cross-effort tensions)
+5. Invite optional reflection — user can volunteer status changes
+6. Apply any status changes the user offers
+7. Update Daily note: End of Day section, counts
+8. Auto-trigger /defrag (full pass) for all bookkeeping
 ```
 
 ### Defrag (`/defrag`)
@@ -467,17 +475,18 @@ domains: [<slug>, ...]          # Filled during triage
 Light pass (during /pulse):
 1. Auto-triage pending Inbox items
 2. Reconcile Map open_loops counts against actual Notes
-3. Flag stale Maps and overdue done→archive transitions
+3. Flag stale Maps (last_active > 7 days)
+4. Report briefly — one-line summary for the pulse briefing
 
 Full pass (after /review or manual):
 All of the above, plus:
-4. Auto-defer unchecked Daily note items to tomorrow
-5. Auto-complete checked items (update Note status)
-6. Catch misclassifications from auto-triage
-7. Flag stale items (active Notes untouched 14+ days)
-8. Identify merge candidates (overlapping Notes in same domain)
-9. Update all timestamps (last_active on Maps, updated on Notes)
-10. Log everything done and flagged to Daily note (Defrag Log section)
+5. Auto-defer unchecked Daily note items to tomorrow
+6. Auto-complete checked items (update Note status)
+7. Catch misclassifications from auto-triage (flag, don't auto-fix)
+8. Flag stale items (active Notes untouched 14+ days)
+9. Identify merge candidates (overlapping Notes in same domain)
+10. Update all timestamps (last_active on Maps, updated on Notes)
+11. Report structured summary of everything done and flagged
 ```
 
 ### Priority Recomputation (`/recompute`)
@@ -578,6 +587,7 @@ Record significant changes to the system here. Date, what changed, why.
 
 | Date | Change | Reason |
 |------|--------|--------|
-| 2026-03-12 | Two-axis context batching (`shared_context` + `mindset`) | Original single-axis (mindset only) missed the dominant switching cost: problem domain. Two unrelated codebases incur massive context reload even in the same cognitive mode. |
-| 2026-03-12 | Batch gating / soft suppression in daily checklist | Low-value batches were forcing unnecessary context switches. Collapsed lines keep them visible without prompting action. |
-| 2026-03-12 | Auto-triage, reflective review, defrag | Item-by-item confirmation in triage and review imposed cognitive load at the worst moments. Triage now executes silently. Review is pure reflection. A new `/defrag` skill owns all organizational mechanics — runs after review (full), during pulse (light), or manually. |
+| 2026-03-12 | Redesign: auto-triage, reflective review, defrag | Triage drops confirmation loops, review becomes pure reflection, new /defrag skill absorbs all bookkeeping. Separates thinking (human) from filing (agent). |
+| 2026-03-12 | Two-axis context batching with soft suppression | Batches now defined by shared_context (domain) and mindset (cognitive mode). Low-value batches are soft-suppressed in daily checklists and pulse briefings. Batch metadata lives in efforts.yaml. |
+| 2026-03-12 | Created efforts.yaml as canonical effort/batch config | Single source of truth for effort definitions, batch groupings, and domain aliases. Documentation and skills defer to this file. |
+| 2026-03-12 | Compact pulse briefing with fold-line suppression | Pulse now shows a compact view by default — batch gating + effort-level suppression collapse low-signal items into a fold-line. Full landscape on request ("unfold"). |

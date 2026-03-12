@@ -15,11 +15,7 @@ Target effort: $ARGUMENTS
 
 ### Steps
 
-1. **Resolve the effort** — match $ARGUMENTS flexibly against:
-   - Map filenames in `Maps/` (e.g., "My Job.md")
-   - The `domain` slug in Map frontmatter (e.g., `my-job`)
-   - Keywords in the Map title or purpose
-   - Be generous with matching: partial names, abbreviations, related terms
+1. **Resolve the effort** — match $ARGUMENTS flexibly against effort names, slugs, and aliases (case-insensitive, partial match). If ambiguous, ask.
 
 2. **Load the Map** — read the full Map file for the target effort.
 
