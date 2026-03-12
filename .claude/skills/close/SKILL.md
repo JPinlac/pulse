@@ -35,7 +35,7 @@ Only include if genuinely noticed — don't fabricate patterns.]
 
 4. **Flag items needing human attention** — only surface things that genuinely need a decision:
    - Items deferred 3+ times (pattern of avoidance — worth naming)
-   - Efforts that went dark (active Notes not touched in 14+ days with no status change)
+   - Efforts that went dark (active Notes past their timescale staleness window with no status change)
    - Cross-effort tensions (competing priorities that can't both win)
    - Anything that seems stuck or misaligned with stated goals
 
