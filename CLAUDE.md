@@ -4,7 +4,9 @@
 
 ## Efforts & Domain Slugs
 
-Read effort definitions (slugs, base_priority, context_batch, purpose, aliases) from **`Maps/` directory** — each Map's frontmatter is the sole source of truth.
+**`Maps/` directory is the sole source of truth** for effort definitions (slugs, base_priority, context_batch, purpose, aliases). Each Map's frontmatter is authoritative.
+
+If Maps/ is empty, run `/efforts bootstrap` to generate starter Maps.
 
 <!-- SLUG-TABLE-START — managed by /efforts, do not edit manually -->
 | Slug | Batch | Aliases |
@@ -16,7 +18,7 @@ Read effort definitions (slugs, base_priority, context_batch, purpose, aliases) 
 
 ## Context Batches
 
-Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Each effort's batch assignment lives in its Map frontmatter (`context_batch` field). Domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
+Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Read each effort's batch assignment from Map frontmatter (`context_batch` field). Domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
 
 ### Default Batch Definitions
 
@@ -42,17 +44,28 @@ New batches can be created during `/efforts add` when existing batches don't fit
 ### Session Start
 1. Read `Home.md` for priorities
 2. Read relevant Map(s) for user's intent
-3. If Maps/ has no `.md` files: run `/efforts` bootstrap to generate default Maps, then proceed
+3. If Maps/ is empty: run `/efforts bootstrap` to generate starter Maps, then proceed
 4. If daily session: generate `Daily/YYYY-MM-DD.md` from Map open loops
 
 ### Daily Note — Living Session Record
 The Daily Note (`Daily/YYYY-MM-DD.md`) accretes through conversation, not batch-generated.
 - **After `/pulse` briefing**: when the user indicates direction, create/update the Daily Note with a prioritized agenda. Pull focused items from relevant Maps AND routine life items so nothing falls through cracks. Aim for 8-15 items. Present in chat for one confirmation pass, then commit to file.
 - **During the session**: log effort silently — context switches, completions, new items that emerge.
-- **`/defrag`**: appends a compressed log entry to the Daily Note.
+- **`/defrag`**: appends decision traces to `## Session Log`.
 - **`/close`**: caps the Daily Note with End of Day reflection.
 
 The Daily Note is the single source of truth for what was planned and what actually happened today.
+
+### Session Log — Decision Trace Layer
+The `## Session Log` section in each Daily Note captures agent decisions for later debugging. This is not user-facing — it exists so an LLM in a future session can trace why something was prioritized, suppressed, or classified the way it was.
+
+Four operations write to Session Log:
+- **`/recompute`** — appends full weight table with per-component breakdown and delta from previous values. Includes which Notes sourced urgency spikes.
+- **`/defrag`** — appends per-Map reconciliation traces, per-Note stale checks with thresholds, and per-item defer/complete/misclassification decisions. Replaces the old one-liner count format.
+- **`/pulse`** — appends suppression reasoning: which batches/efforts were suppressed, the weight values and thresholds that triggered suppression, and what was resurfaced.
+- **`/triage`** — appends classification decisions with match rationale: which Map purpose matched each Inbox item and why.
+
+Each entry is `### [Operation] — HH:MM` with structured subsections. Omit empty subsections. Keep individual lines compact (one line per decision) but complete enough that reading the Session Log alone is sufficient to answer "why was X ranked/hidden/classified this way on this date."
 
 ### Frontmatter is Agent-Managed
 The user never manually writes metadata. Agent writes/updates all YAML frontmatter.
@@ -88,4 +101,3 @@ Low-value batches are soft-suppressed in `/pulse` output. `/birdseyereview` prov
 
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.
-
