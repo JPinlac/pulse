@@ -2,7 +2,7 @@
 
 > Deep reference: `SYSTEM.md` — read only when you need full design context (formulas, rationale, evolution log). Do NOT load it by default.
 
-## Efforts & Domain Slugs
+## Efforts & Slugs
 
 **`Maps/` directory is the sole source of truth** for effort definitions (slugs, base_priority, context_batch, purpose, aliases). Each Map's frontmatter is authoritative.
 
@@ -18,7 +18,7 @@ If Maps/ is empty, run `/efforts bootstrap` to generate starter Maps.
 
 ## Context Batches
 
-Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Read each effort's batch assignment from Map frontmatter (`context_batch` field). Domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
+Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Read each effort's batch assignment from Map frontmatter (`context_batch` field). Problem domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
 
 ### Default Batch Definitions
 
