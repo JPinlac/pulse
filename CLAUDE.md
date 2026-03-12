@@ -99,5 +99,8 @@ When loading an effort for context, read the Map only. Read linked Notes only wh
 ### Display Behavior
 Low-value batches are soft-suppressed in `/pulse` output. `/birdseyereview` provides a full unsuppressed landscape audit when needed. Suppressed batches and low-signal efforts (0 loops, stale, no deadlines) are folded — say "unfold" for the full landscape.
 
+### Silent File Operations
+All file writes (Daily Notes, Session Logs, Map updates, triage results) must be delegated to background sub-agents. The main conversation should only display human-readable output (briefings, confirmations, summaries). Never perform inline Write/Edit calls for logging or note management in the main conversation — it pollutes the display context.
+
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.
