@@ -37,7 +37,7 @@ Target effort: $ARGUMENTS
 ```
 
 4. **Log the context switch** in today's Daily note (create one if it doesn't exist):
-   - Add the effort's domain to `efforts_touched[]` in frontmatter
+   - Add the effort to `efforts_touched[]` in frontmatter
    - Add a line: `> Pivoted to [effort] at [time]`
 
 5. **Apply recency boost** — update the Map's `last_active` to today.
