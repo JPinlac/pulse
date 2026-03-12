@@ -1,29 +1,26 @@
 ---
 type: map
-effort: {{effort-slug}}
-context_batch: {{context-batch}}
+effort: personal-projects
+context_batch: Projects
 priority_weight: 0.5
 base_priority: 5
-purpose: ""
-aliases: []
-last_active: {{date}}
+purpose: "Creative and growth work you do for yourself"
+aliases: [projects, hobby, side project]
+last_active: 2026-03-12
 open_loops: 0
 related_efforts: []
 tags: []
 ---
-# {{title}}
+# Personal Projects
 
 ## Purpose
-<!-- Why this effort matters -->
+Creative and growth work you do for yourself.
 
 ## Active Threads
-<!-- Current open loops -->
 
 ## Sub-themes
-<!-- Organized sections -->
 
 ## Related Maps
-<!-- Cross-effort links -->
 
 ## Notes
 ```dataview

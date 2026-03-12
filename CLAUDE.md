@@ -4,11 +4,7 @@
 
 ## Efforts & Domain Slugs
 
-Read effort definitions (slugs, base_priority, context_batch, purpose) from:
-1. **`Maps/` directory** — each Map's frontmatter is the live source of truth
-2. **`efforts.yaml`** 
-
-If Maps exist, they are authoritative. If Maps/ is empty, read `efforts.yaml` and generate Maps first.
+Read effort definitions (slugs, base_priority, context_batch, purpose, aliases) from **`Maps/` directory** — each Map's frontmatter is the sole source of truth.
 
 <!-- SLUG-TABLE-START — managed by /efforts, do not edit manually -->
 | Slug | Batch | Aliases |
@@ -20,7 +16,17 @@ If Maps exist, they are authoritative. If Maps/ is empty, read `efforts.yaml` an
 
 ## Context Batches
 
-Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Read batch definitions (`shared_context` list + `mindset` string) from `efforts.yaml`. Read each effort's batch assignment from Map frontmatter (`context_batch` field). Domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
+Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Each effort's batch assignment lives in its Map frontmatter (`context_batch` field). Domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
+
+### Default Batch Definitions
+
+| Batch | Shared Context | Mindset |
+|-------|----------------|---------|
+| **Work** | IDE/terminal workflow, engineering mental models, team stakeholders and processes | Analytical, execution-focused |
+| **Maintenance** | Physical environment, bodily awareness, routines and logistics | Practical, embodied |
+| **Projects** | Personal codebases, creative tooling | Creative, exploratory |
+
+New batches can be created during `/efforts add` when existing batches don't fit. Add new batch definitions to this table when created.
 
 ## Vault Structure
 - `Home.md` — Dynamic focus dashboard
@@ -36,7 +42,7 @@ Context batches group efforts along two axes: **problem domain** (primary) and *
 ### Session Start
 1. Read `Home.md` for priorities
 2. Read relevant Map(s) for user's intent
-3. If Maps/ is empty: read `efforts.yaml`, generate Maps, then proceed
+3. If Maps/ has no `.md` files: run `/efforts` bootstrap to generate default Maps, then proceed
 4. If daily session: generate `Daily/YYYY-MM-DD.md` from Map open loops
 
 ### Daily Note — Living Session Record

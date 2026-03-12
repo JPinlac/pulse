@@ -4,8 +4,8 @@ efforts: []
 status: active
 created: {{date}}
 updated: {{date}}
-effort_estimate: null
-effort_actual: null
+effort_level: null
+timescale: null
 due: null
 context_group: null
 tags: []
