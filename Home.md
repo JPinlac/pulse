@@ -6,7 +6,7 @@ updated:
 
 ## Current Focus
 <!-- Agent-maintained: top 3-5 items across all efforts, optimized for minimal context switching -->
-*Run `/pulse` to populate this section based on Map open loops and priority weights.*
+*No items yet. Agent will populate this section based on Map open loops and priority weights.*
 
 ## Effort Overview
 ```dataview

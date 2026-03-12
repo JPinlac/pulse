@@ -9,6 +9,7 @@
 #   base_priority  — Life-importance anchor, 1-10 (10 = highest)
 #   context_batch  — Group name for minimizing context switching
 #   purpose        — One-line description of why this effort matters
+#   aliases        — Optional flexible-match terms for /focus resolution
 
 efforts:
   - name: "My Job"
@@ -16,24 +17,28 @@ efforts:
     base_priority: 9
     context_batch: Work
     purpose: "Day job that pays the bills"
+    aliases: [job, work]
 
   - name: "Side Project"
     slug: side-project
     base_priority: 5
     context_batch: Projects
     purpose: "The thing I build on weekends"
+    aliases: [project, hobby]
 
   - name: "Health"
     slug: health
     base_priority: 7
     context_batch: Personal
     purpose: "Exercise, nutrition, sleep"
+    aliases: [exercise, gym]
 
   - name: "Learning"
     slug: learning
     base_priority: 6
     context_batch: Personal
     purpose: "Books, courses, skills I'm developing"
+    aliases: [study, courses]
 
 # Context batches group efforts along two axes:
 #   shared_context — the problem domain: tools, codebases, environments, stakeholder worlds

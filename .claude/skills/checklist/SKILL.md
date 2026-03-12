@@ -15,18 +15,22 @@ Generate or update today's daily checklist at `Daily/YYYY-MM-DD.md`.
 
 2. **Scan active Notes** — find notes in `Notes/` where `status: active` or `status: waiting`, especially those with `due` dates approaching.
 
-3. **Group by context batch** — read the `context_batch` field from each Map's frontmatter to determine groupings. Efforts sharing a `context_batch` value are grouped together.
+3. **Group by context batch** to minimize context switching.
 
 4. **Sort batches** by combined `priority_weight` of their efforts (highest batch first).
 
 5. **Within each batch**, sort items by individual effort priority weight.
 
-6. **Apply batch gating** — after sorting, identify soft-suppressed batches. A batch is suppressed when ALL of:
-   - Its combined weight is below **40%** of the top batch's combined weight
-   - It has no items with a `due` date within 7 days
-   - It has no `status: waiting` items older than 3 days
+6. **Apply batch gating** — soft-suppress low-value batches:
+   - A batch is suppressed when ALL of the following are true:
+     - Combined weight is below 40% of the top batch's combined weight
+     - No items with `due` dates within 7 days
+     - No `status: waiting` items older than 3 days
+   - Suppressed batches render as a single collapsed line:
+     `> ~[Batch Name] [weight: X.XX] — N items, nothing urgent`
+   - Full batches render normally with checklist items
 
-7. **Generate the Daily note** using the template structure. Full batches get checklist sections; suppressed batches get a single collapsed line:
+7. **Generate the Daily note** using the template structure:
 
 ```markdown
 ---
@@ -46,9 +50,10 @@ items_deferred: 0
 ## Context B: [batch name] [combined weight: X.XX]
 - [ ] Item [[link]]
 
----
-## Deferred Batches
-> ~[Batch Name] [weight: X.XX] — N items, nothing urgent
+## Context C: [batch name] [combined weight: X.XX]
+- [ ] Item [[link]]
+
+> ~[Suppressed Batch] [weight: X.XX] — N items, nothing urgent
 
 ---
 ## Annotations
