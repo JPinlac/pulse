@@ -63,10 +63,11 @@ When loading an effort for context, read the Map only. Read linked Notes only wh
 `priority_weight = f(base_priority, recency_boost, urgency_spike, effort_applied)` normalized to 0.0–1.0
 
 ### Capture Flow
-1. Create `.md` in `Inbox/` with capture frontmatter
-2. Auto-triage picks it up at next `/pulse` or `/triage` — no human confirmation needed
-3. Auto-triage: assign `domains[]`, create Note in `Notes/` or append to existing, update Map(s)
-4. `/defrag` catches any misclassifications later
+1. Delegate to a background sub-agent (zero context disruption to main conversation)
+2. Sub-agent creates `.md` in `Inbox/` with capture frontmatter
+3. Confirm immediately — don't wait for the agent to finish
+4. Auto-triage picks it up at next `/pulse` or `/triage` — no human confirmation needed
+5. `/defrag` catches any misclassifications later
 
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.
