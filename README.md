@@ -28,11 +28,9 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
    ```
    /pulse
    ```
-   That's it. The repo ships with 3 default efforts — **Work**, **Life Maintenance**, and **Personal Projects** — as pre-built Maps covering the universal domains of any knowledge worker. The agent gives you a priority briefing. You're live.
+   The agent walks you through setup and gives you a priority briefing. You're live.
 
-   When you're ready to tailor efforts to your life, see [Customization](#customization).
-
-3. **Open in Obsidian** (optional) — point Obsidian at this directory for graph view, Dataview tables, and browsing. Install the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for dynamic queries.
+3. **Customize your efforts** — efforts are the persistent domains of your life (not tasks or projects). PULSE works best when efforts reflect how *you* actually spend your attention. Run `/efforts` to tailor them to your life, or add, splinter, merge, and review efforts at any time.
 
 ## How It Works
 
@@ -113,6 +111,9 @@ Use `/efforts` for all effort lifecycle operations:
 
 ### Changing priorities
 Edit `base_priority` in the Map's frontmatter. Run `/recompute` to recalculate weights.
+
+### Obsidian integration
+Point Obsidian at this directory for graph view, Dataview tables, and browsing. Install the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for dynamic queries.
 
 ## Full Reference
 

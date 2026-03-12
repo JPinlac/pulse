@@ -1,12 +1,12 @@
 ---
 name: focus
-description: Pivot to a specific effort — inspiration override. Loads the relevant Map, shows active threads, and logs the context switch. Use when you want to work on something specific right now.
+description: Enter deep flow on a specific effort — inspiration override. Loads the relevant Map, shows active threads, and logs the context switch. Use for deep focus on a single effort, not for general agenda setting.
 user-invocable: true
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: <effort name>
 ---
 
-## Focus — Inspiration Override
+## Focus — Deep Flow Override
 
 The user wants to focus on a specific effort. Pivot immediately — no friction, no "but your schedule says..."
 

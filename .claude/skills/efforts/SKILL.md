@@ -26,15 +26,13 @@ Read `$ARGUMENTS` to determine the action:
 
 If `Maps/` contains no `.md` files when any action is attempted:
 
-1. Present the 3 default efforts:
-   - **Work** (slug: `work`, priority: 9, batch: Work) — "Primary professional obligation"
-   - **Life Maintenance** (slug: `maintenance`, priority: 7, batch: Maintenance) — "Health, home, chores, admin — things that rot if ignored"
-   - **Personal Projects** (slug: `personal-projects`, priority: 5, batch: Projects) — "Creative and growth work you do for yourself"
-2. Ask: "Want to start with these, or tell me about your life and I'll tailor them?"
-3. If the user accepts defaults → create 3 Maps in `Maps/` with full frontmatter (including purpose and aliases)
-4. If the user describes their life → generate tailored Maps directly (aim for 3-5 efforts to start)
-5. Run the Sync Slug Table procedure
-6. After bootstrap, proceed with the originally requested action (or `/pulse` if they came from there)
+1. Ask the user about their life: "What are the major domains you spend your time and attention on?" Let them describe freely.
+2. From their description, generate tailored efforts (aim for 3-5). For each, propose a name, slug, one-line purpose, `base_priority`, `context_batch`, and aliases.
+3. Present the proposed efforts for confirmation. Let the user adjust before committing.
+4. If the user would rather skip the conversation: "Or if you'd rather just get started, I can set up 3 universal defaults — **Work**, **Life Maintenance**, and **Personal Projects** — and you can customize later with `/efforts`."
+5. Create Maps in `Maps/` with full frontmatter (including purpose and aliases)
+6. Run the Sync Slug Table procedure
+7. After bootstrap, proceed with the originally requested action (or `/pulse` if they came from there)
 
 ---
 

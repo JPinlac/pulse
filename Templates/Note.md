@@ -1,5 +1,6 @@
 ---
 type: note
+subtype: note
 efforts: []
 status: active
 created: {{date}}

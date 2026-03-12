@@ -43,6 +43,22 @@ Auto-triaged N items:
 ...
 ```
 
+5. **Log triage decisions** — append a timestamped classification trace to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
+
+   Format:
+   ```
+   ### Triage — HH:MM
+
+   - [inbox-file-slug] → [effort(s)] as [subtype] "[note-slug]" (new|appended)
+     Match rationale: [one line — which Map purpose/thread matched and why]
+   - [inbox-file-slug] → [effort(s)] as [subtype] "[note-slug]" (new|appended)
+     Match rationale: [one line]
+   ```
+
+   The match rationale is the key artifact — it records *why* this capture was assigned to this effort, so a later `/defrag` misclassification check (or manual audit) can evaluate the reasoning. Keep it to one line per item.
+
+   If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
+
 ### Principles
 - **No confirmation cycles.** Execute immediately. The cost of a misclassified note is low — `/defrag` catches mistakes later.
 - Cross-effort notes are encouraged — don't force single-effort assignment
