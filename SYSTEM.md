@@ -59,7 +59,7 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 4. **Notes** are the atomic units of content — linked to Maps via `domains[]`
 5. **Maps** aggregate notes per effort — they hold active threads, open loops, and purpose
 6. **Home.md** is a computed view across all Maps — priorities, recent activity, tensions
-7. **Daily notes** are generated tactical checklists — ephemeral, not archival
+7. **Daily notes** are living session records — agenda + effort log, built conversationally
 
 ### Data Flows Upward, Control Flows Downward
 
@@ -403,6 +403,11 @@ domains: [<slug>, ...]          # Filled during triage
    — Suppressed batches/efforts collapse to a single fold-line ("say unfold for full landscape")
 7. Full view on request: all batches, all efforts, top threads, stale Maps
 8. Wait for direction
+9. Build Daily Note from conversation — when the user indicates what they want to work on:
+   — Pull focused items from indicated Maps, grouped by batch
+   — Scan remaining Maps for time-sensitive/routine items (nothing falls through cracks)
+   — Keep to 8-15 items. Present in chat for one confirmation pass, then write to file.
+   — Subsequent Daily Note updates during the session happen silently.
 ```
 
 ### Bootstrap (first run)
@@ -415,16 +420,16 @@ domains: [<slug>, ...]          # Filled during triage
 5. Proceed with normal pulse briefing
 ```
 
-### Checklist Generation (`/birdseyereview`)
+### Full Landscape Audit (`/birdseyereview`)
 
 ```
 1. Scan all Maps for open loops and active threads
 2. Scan Notes for active/waiting items with approaching due dates
 3. Group items by context batch to minimize context switching
 4. Sort batches by combined weight, items within by effort weight
-5. Apply batch gating — soft-suppress low-value batches (see Section 5)
-6. Generate Daily/YYYY-MM-DD.md — max 10-12 items across full batches
-7. Each item links to its source Note or Map section
+5. Zero suppression — every batch rendered fully
+6. Generate Daily/YYYY-MM-DD.md with all items linked to source Notes/Maps
+7. Use for periodic reviews (weekly, after a break), not daily agenda setting
 ```
 
 ### Capture Flow (`/capture`)
@@ -487,6 +492,7 @@ All of the above, plus:
 9. Identify merge candidates (overlapping Notes in same domain)
 10. Update all timestamps (last_active on Maps, updated on Notes)
 11. Report structured summary of everything done and flagged
+12. Log to Daily Note — append timestamped one-liner under ## Defrag Log section
 ```
 
 ### Priority Recomputation (`/recompute`)
@@ -541,7 +547,7 @@ Skills are defined in `.claude/skills/` and invoked as slash commands.
 | Skill | File | Trigger | Arguments |
 |-------|------|---------|-----------|
 | `/pulse` | `pulse/SKILL.md` | Session start (includes light defrag) | None |
-| `/birdseyereview` | `birdseyereview/SKILL.md` | Generate/review daily list | Optional: date |
+| `/birdseyereview` | `birdseyereview/SKILL.md` | Full landscape audit (periodic reviews) | Optional: date |
 | `/capture` | `capture/SKILL.md` | Quick capture | The thought to capture |
 | `/triage` | `triage/SKILL.md` | Auto-process inbox (no confirmation) | Optional: specific file |
 | `/focus` | `focus/SKILL.md` | Pivot to effort | Effort name (flexible matching) |
@@ -591,3 +597,4 @@ Record significant changes to the system here. Date, what changed, why.
 | 2026-03-12 | Two-axis context batching with soft suppression | Batches now defined by shared_context (domain) and mindset (cognitive mode). Low-value batches are soft-suppressed in daily checklists and pulse briefings. Batch metadata lives in efforts.yaml. |
 | 2026-03-12 | Created efforts.yaml as canonical effort/batch config | Single source of truth for effort definitions, batch groupings, and domain aliases. Documentation and skills defer to this file. |
 | 2026-03-12 | Compact pulse briefing with fold-line suppression | Pulse now shows a compact view by default — batch gating + effort-level suppression collapse low-signal items into a fold-line. Full landscape on request ("unfold"). |
+| 2026-03-12 | Conversational Daily Note flow + defrag logging | Daily Note now accretes through /pulse conversation (not batch-generated). /defrag logs to Daily Note. /birdseyereview repositioned as periodic audit. /focus clarified as deep flow tool. |

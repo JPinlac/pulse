@@ -23,9 +23,11 @@ Process untriaged items from `Inbox/` into the PULSE system. Execute immediately
       - If the content is a new thread: create a Note in `Notes/` with proper frontmatter (type, domains, status, dates, effort_estimate, context_group, tags). Filename: `Notes/[descriptive-slug].md`
       - If the content clearly extends an existing Note: read the target note, append content, update `updated` date.
 
-   c. **Update relevant Maps**:
+   c. **Update relevant Maps (compressed pointer)**:
       - For each domain in the note's `domains[]`, read the corresponding Map
-      - Add the note link under the appropriate Active Thread or Sub-theme section
+      - Add a compressed pointer under the appropriate section:
+        `- [[note-slug]] — [≤15-word summary] (subtype, date)`
+      - Do NOT inline note content or extended summaries into the Map
       - Increment `open_loops` count in the Map's frontmatter
       - Update `last_active` to today
 

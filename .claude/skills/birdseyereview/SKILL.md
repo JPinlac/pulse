@@ -68,3 +68,6 @@ items_deferred: 0
 - Keep items actionable and concrete, not vague
 - If an effort has no open loops, omit it from the checklist
 - $ARGUMENTS can optionally specify a date other than today
+
+### Relationship to /pulse
+/pulse builds a focused daily agenda conversationally (8-15 items). /birdseyereview shows EVERYTHING — useful when you need the full instrument panel, not the cockpit.
