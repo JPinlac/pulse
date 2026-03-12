@@ -17,7 +17,7 @@ SORT priority_weight DESC
 
 ## Recent Activity
 ```dataview
-TABLE domains, status, updated
+TABLE efforts, status, updated
 FROM "Notes"
 SORT updated DESC
 LIMIT 5

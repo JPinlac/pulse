@@ -55,8 +55,8 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 
 1. **Input** enters as conversation or `/capture`
 2. **Inbox** holds raw captures with minimal metadata
-3. **Triage** classifies, assigns domains, creates or appends to Notes
-4. **Notes** are the atomic units of content — linked to Maps via `domains[]`
+3. **Triage** classifies, assigns efforts, creates or appends to Notes
+4. **Notes** are the atomic units of content — linked to Maps via `efforts[]`
 5. **Maps** aggregate notes per effort — they hold active threads, open loops, and purpose
 6. **Home.md** is a computed view across all Maps — priorities, recent activity, tensions
 7. **Daily notes** are living session records — agenda + effort log, built conversationally
@@ -99,9 +99,9 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 │   └── Note.md
 │
 ├── Queries/                 Saved Dataview queries.
-│   ├── Active by Domain.md
+│   ├── Active by Effort.md
 │   ├── Open Loops.md
-│   ├── Cross Domain.md
+│   ├── Cross Effort.md
 │   └── Stale Items.md
 │
 └── .claude/
@@ -143,7 +143,7 @@ Efforts are not siloed. They feed each other. When defining your efforts, consid
 - Which efforts share intellectual territory?
 - Which efforts produce output that feeds into others?
 
-These connections surface as `related_domains` in Map frontmatter and help the agent identify cross-pollination opportunities.
+These connections surface as `related_efforts` in Map frontmatter and help the agent identify cross-pollination opportunities.
 
 ### Managing Efforts
 
@@ -243,7 +243,7 @@ priority_weight = min(base_score + recency_boost + urgency_spike + effort_factor
 
 **base_score** — Normalized `base_priority`. This is the life-importance anchor. A priority-9 effort (0.90) will almost always outrank a priority-3 effort (0.30) unless the lower one has urgent signals. Base priority changes rarely — only when life circumstances shift.
 
-**recency_boost** — Each effort interaction in the last 7 days adds +0.03, capped at +0.15. "Interaction" means the effort appeared in a daily note's `domains_touched`, or a note in that effort was created/updated. This rewards momentum — efforts you're actively working on stay visible.
+**recency_boost** — Each effort interaction in the last 7 days adds +0.03, capped at +0.15. "Interaction" means the effort appeared in a daily note's `efforts_touched`, or a note in that effort was created/updated. This rewards momentum — efforts you're actively working on stay visible.
 
 **urgency_spike** — Temporary boost from:
 - Notes with `due` dates within 7 days: +0.05 per note, max +0.15
@@ -285,13 +285,13 @@ All frontmatter is agent-managed. These schemas are the contract between the vau
 ```yaml
 ---
 type: map
-domain: <slug>                  # Canonical effort identifier
+effort: <slug>                  # Canonical effort identifier
 context_batch: <batch-name>     # Context batch for grouping
 priority_weight: <0.0-1.0>     # Computed. Never manually set.
 base_priority: <1-10>          # Life-importance anchor. Rarely changes.
 last_active: <YYYY-MM-DD>      # Last date this effort was touched
 open_loops: <int>              # Count of active/waiting items linked to this Map
-related_domains:               # Cross-effort connections
+related_efforts:               # Cross-effort connections
   - <slug>
 tags: [<tag>, ...]
 ---
@@ -302,7 +302,7 @@ tags: [<tag>, ...]
 ```yaml
 ---
 type: <note|log|plan|reference|capture>
-domains:                       # Which Maps this connects to (1 or more)
+efforts:                       # Which Maps this connects to (1 or more)
   - <slug>
 status: <active|someday|waiting|done|archived>
 created: <YYYY-MM-DD>
@@ -322,7 +322,7 @@ tags: [<tag>, ...]
 type: daily
 date: <YYYY-MM-DD>
 generated: true
-domains_touched: [<slug>, ...]  # Updated throughout the day
+efforts_touched: [<slug>, ...]  # Updated throughout the day
 items_completed: <int>          # Filled at review
 items_deferred: <int>           # Filled at review
 ---
@@ -336,7 +336,7 @@ type: capture
 source: <voice|text|agent>
 captured: <YYYY-MM-DDTHH:MM:SS>
 triaged: <true|false>
-domains: [<slug>, ...]          # Filled during triage
+efforts: [<slug>, ...]          # Filled during triage
 ---
 ```
 
@@ -375,7 +375,7 @@ domains: [<slug>, ...]          # Filled during triage
 
 | From | To | Trigger |
 |------|----|---------|
-| capture | active | Triage assigns domains and status |
+| capture | active | Triage assigns efforts and status |
 | active | waiting | Blocked on external dependency. Note what it's waiting on. |
 | active | someday | Deferred indefinitely. Still valued, not urgent. |
 | active | done | Work completed. |
@@ -414,7 +414,7 @@ domains: [<slug>, ...]          # Filled during triage
 1. Check if Maps/ directory has any .md files
 2. If empty, read efforts.yaml
 3. For each effort: generate a Map file using the Map template
-4. Populate frontmatter from effort config (domain, base_priority, context_batch, purpose)
+4. Populate frontmatter from effort config (effort slug, base_priority, context_batch, purpose)
 5. Proceed with normal pulse briefing
 ```
 
@@ -443,12 +443,12 @@ domains: [<slug>, ...]          # Filled during triage
 
 ```
 1. Find all Inbox items where triaged: false
-2. For each: match content against Maps, assign domains/status — no confirmation
+2. For each: match content against Maps, assign efforts/status — no confirmation
 3. Execute immediately:
    a. Create Note in Notes/ (or append to existing)
    b. Update relevant Map(s): add link, increment open_loops, update last_active
    c. Mark Inbox item triaged: true
-4. Report summary: "Auto-triaged N items: [title] → [domain], ..."
+4. Report summary: "Auto-triaged N items: [title] → [effort], ..."
 ```
 
 ### Focus Pivot (`/focus`)
@@ -489,7 +489,7 @@ All of the above, plus:
 6. Auto-complete checked items (update Note status)
 7. Catch misclassifications from auto-triage (flag, don't auto-fix)
 8. Flag stale items (active Notes untouched 14+ days)
-9. Identify merge candidates (overlapping Notes in same domain)
+9. Identify merge candidates (overlapping Notes in same effort)
 10. Update all timestamps (last_active on Maps, updated on Notes)
 11. Report structured summary of everything done and flagged
 12. Log to Daily Note — append timestamped one-liner under ## Defrag Log section
@@ -518,7 +518,7 @@ The vault uses the Dataview plugin for dynamic views. Queries live in two places
 Each Map has an inline query listing its linked notes:
 
 ```dataview
-LIST FROM "Notes" WHERE contains(domains, this.domain) SORT updated DESC
+LIST FROM "Notes" WHERE contains(efforts, this.effort) SORT updated DESC
 ```
 
 ### Embedded in Home.md
@@ -533,9 +533,9 @@ TABLE priority_weight, open_loops, last_active FROM "Maps" SORT priority_weight 
 
 | Query | Purpose |
 |-------|---------|
-| Active by Domain | All active notes grouped by domain with counts |
+| Active by Effort | All active notes grouped by effort with counts |
 | Open Loops | Active and waiting items sorted by staleness (oldest first) |
-| Cross Domain | Notes linked to multiple domains |
+| Cross Effort | Notes linked to multiple efforts |
 | Stale Items | Active notes not updated in 14+ days |
 
 ---

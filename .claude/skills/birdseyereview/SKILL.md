@@ -28,7 +28,7 @@ Generate or update today's daily overview at `Daily/YYYY-MM-DD.md`. Shows every 
 type: daily
 date: YYYY-MM-DD
 generated: true
-domains_touched: []
+efforts_touched: []
 items_completed: 0
 items_deferred: 0
 ---

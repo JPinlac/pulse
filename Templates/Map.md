@@ -1,12 +1,12 @@
 ---
 type: map
-domain: {{domain-slug}}
+effort: {{effort-slug}}
 context_batch: {{context-batch}}
 priority_weight: 0.5
 base_priority: 5
 last_active: {{date}}
 open_loops: 0
-related_domains: []
+related_efforts: []
 tags: []
 ---
 # {{title}}
@@ -27,6 +27,6 @@ tags: []
 ```dataview
 LIST
 FROM "Notes"
-WHERE contains(domains, this.domain)
+WHERE contains(efforts, this.effort)
 SORT updated DESC
 ```
