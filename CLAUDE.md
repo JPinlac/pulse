@@ -48,9 +48,8 @@ The user never manually writes metadata. Agent writes/updates all YAML frontmatt
 
 ### Capture Flow
 1. Create `.md` in `Inbox/` with capture frontmatter
-2. Triage: assign `domains[]`, suggest `status` and `context_group`
-3. Create proper Note in `Notes/` or append to existing
-4. Update relevant Map(s)
+2. Auto-triage picks it up at next `/pulse` (light defrag) or `/triage` — no human confirmation needed
+3. Auto-triage: assign `domains[]`, create Note in `Notes/` or append to existing, update Map(s)
 
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.
