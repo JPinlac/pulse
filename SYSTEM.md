@@ -307,7 +307,8 @@ domains:                       # Which Maps this connects to (1 or more)
 status: <active|someday|waiting|done|archived>
 created: <YYYY-MM-DD>
 updated: <YYYY-MM-DD>
-effort_estimate: <small|medium|large>
+effort_estimate: <1h|2h|3h|5h|8h|13h|21h>  # Fibonacci time estimate
+effort_actual: null                # Actual time spent (accreted during sessions)
 due: <YYYY-MM-DD|null>         # Optional deadline
 context_group: <batch-name|null>
 tags: [<tag>, ...]
