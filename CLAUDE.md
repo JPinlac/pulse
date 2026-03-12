@@ -6,7 +6,7 @@
 
 Read effort definitions (slugs, base_priority, context_batch, purpose) from:
 1. **`Maps/` directory** — each Map's frontmatter is the live source of truth
-2. **`efforts.yaml`** — bootstrap config used to generate Maps on first run
+2. **`efforts.yaml`** 
 
 If Maps exist, they are authoritative. If Maps/ is empty, read `efforts.yaml` and generate Maps first.
 
@@ -82,3 +82,4 @@ Low-value batches are soft-suppressed in `/pulse` output. `/birdseyereview` prov
 
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.
+
