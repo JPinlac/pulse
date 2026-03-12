@@ -2,6 +2,20 @@
 
 PULSE is an agent-first personal knowledge system built on Obsidian and Claude Code. You talk, the agent does the bookkeeping — capturing thoughts, computing priorities, and surfacing what matters now.
 
+## Workflow
+
+The entire interface is two commands:
+
+```
+/pulse                    ← start here
+  talk, plan, do, capture
+/close                    ← end here
+```
+
+Everything between `/pulse` and `/close` is conversation. You talk about what you're working on, what's on your mind, what needs to happen. The agent captures, organizes, updates priorities, and manages Notes and Maps behind the scenes.
+
+Optionally, `/focus [effort]` drops you into deep flow on a single effort — inspiration override. The context switch is logged, weights adjust, and the system reorganizes around your new focus.
+
 ## Quick Setup
 
 1. **Clone this repo** as your vault root (or add as a git submodule):
@@ -28,30 +42,6 @@ PULSE is an agent-first personal knowledge system built on Obsidian and Claude C
 
 4. **Open in Obsidian** (optional) — point Obsidian at this directory for graph view, Dataview tables, and browsing. Install the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for dynamic queries.
 
-## Commands
-
-### Session Skills
-
-Your workflow touchpoints — these are the commands you use to drive a session.
-
-| Command | What it does |
-|---------|-------------|
-| `/pulse` | Start a session — auto-triages Inbox, loads priorities, shows what matters now |
-| `/capture` | Capture a thought, idea, or task to Inbox |
-| `/birdseyereview` | Bird's-eye view of all efforts — full, non-compressed daily overview |
-| `/focus [effort]` | Pivot to a specific effort — inspiration override |
-| `/close` | Session-close ritual — reflection, then auto-cleanup |
-
-### System Skills
-
-Bookkeeping that normally runs automatically (e.g., `/defrag` fires after `/close`, `/triage` runs during `/pulse`). Safe to invoke manually anytime — they're idempotent.
-
-| Command | What it does |
-|---------|-------------|
-| `/triage` | Auto-process Inbox items into Notes and Maps |
-| `/defrag` | Organizational cleanup — reconcile, defer, flag stale items |
-| `/recompute` | Recalculate all priority weights across Maps |
-
 ## How It Works
 
 Each life effort gets a **Map** — a markdown file that serves as the source of truth for that effort. **Notes** are flat files linked to one or more Maps. **Daily checklists** are generated from open loops across all Maps, batched by context group to minimize cognitive switching.
@@ -61,6 +51,45 @@ Each life effort gets a **Map** — a markdown file that serves as the source of
 **Inspiration override** is a first-class concept. When you say "I want to work on X," the agent pivots immediately — no friction, no guilt. The shift is logged, weights adjust, and you're in flow.
 
 You never touch frontmatter. You never manually file things. You say what's on your mind and the system organizes around you.
+
+## Commands
+
+### Core
+
+| Command | What it does |
+|---------|-------------|
+| `/pulse` | Start a session — loads priorities, surfaces what matters now |
+| `/close` | End a session — reflection, then auto-cleanup |
+
+### Optional
+
+| Command | What it does |
+|---------|-------------|
+| `/focus [effort]` | Deep flow on one effort — inspiration override |
+| `/capture` | Quick-capture a thought or task to Inbox |
+| `/birdseyereview` | Full landscape audit — zero suppression |
+
+### Automatic
+
+Bookkeeping that runs as part of other commands. Safe to invoke manually — they're idempotent.
+
+| Command | What it does |
+|---------|-------------|
+| `/triage` | Process Inbox items into Notes and Maps (runs during `/pulse`) |
+| `/defrag` | Reconcile, defer, flag stale items (runs after `/close`) |
+| `/recompute` | Recalculate priority weights across Maps |
+
+## Development Roadmap
+
+PULSE is built in three stages. Each unlocks after the previous one earns trust through use.
+
+| Stage | Focus | Status |
+|-------|-------|--------|
+| **1. Structured Overview** | Batched, prioritized view of the full landscape. You verify the system tracks reality. | **Current** |
+| **2. Scope Reduction** | System earns the right to hide things. Shows only what needs you today. | Planned |
+| **3. Attention Protection** | System manages cognitive budget as a resource. Pushes back on unnecessary switches. | Planned |
+
+Stage 1→2 is the hardest transition — it requires you to stop verifying. That trust only comes from daily use.
 
 ## Vault Layout
 
@@ -81,7 +110,7 @@ SYSTEM.md            ← Full system design spec.
 ## Customization
 
 ### Adding an effort
-Add an entry to `efforts.yaml` and run `/pulse` — the agent will generate the new Map automatically.
+Ask Claude to add a new life effort. It will update `efforts.yaml`, generate the Map, and wire everything up.
 
 ### Removing an effort
 Run `/focus [effort]`, mark remaining items as done or archived, then delete the Map file and remove the entry from `efforts.yaml`.
@@ -91,26 +120,6 @@ Edit the `context_batches` section in `efforts.yaml` and update the `context_bat
 
 ### Changing priorities
 Edit `base_priority` in `efforts.yaml` or directly in the Map's frontmatter (the Map is authoritative). Run `/recompute` to recalculate weights.
-
-## Typical Session
-
-```
-> /pulse
-  Agent reads Maps, shows top priorities.
-
-> /capture automate the deploy pipeline
-  Agent files it to Inbox. Auto-triage picks it up next pulse.
-
-> /birdseyereview
-  Agent generates today's Daily note — tasks batched by context.
-
-> "Actually, I want to work on the side project first"
-  Agent pivots. Loads the Map. Logs the switch.
-
-> /close
-  Agent reflects on what happened, what emerged, what patterns are forming.
-  Then auto-runs defrag to handle all bookkeeping.
-```
 
 ## Full Reference
 
