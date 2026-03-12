@@ -487,7 +487,7 @@ All of the above, plus:
 5. Auto-defer unchecked Daily note items to tomorrow
 6. Auto-complete checked items (update Note status)
 7. Catch misclassifications from auto-triage (flag, don't auto-fix)
-8. Flag stale items (active Notes untouched 14+ days)
+8. Flag stale items (active Notes past their timescale window — see threshold table in defrag skill)
 9. Identify merge candidates (overlapping Notes in same effort)
 10. Update all timestamps (last_active on Maps, updated on Notes)
 11. Report structured summary of everything done and flagged
@@ -535,7 +535,7 @@ TABLE priority_weight, open_loops, last_active FROM "Maps" SORT priority_weight 
 | Active by Effort | All active notes grouped by effort with counts |
 | Open Loops | Active and waiting items sorted by staleness (oldest first) |
 | Cross Effort | Notes linked to multiple efforts |
-| Stale Items | Active notes not updated in 14+ days |
+| Stale Items | Active notes past their timescale staleness window (default 14 days) |
 
 ---
 

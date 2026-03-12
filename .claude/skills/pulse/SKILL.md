@@ -16,7 +16,7 @@ You are the agent interface for a PULSE (Priority-Updated Living System Engine) 
 2. **Light defrag** — before the briefing, silently run a light defrag pass:
    - Auto-triage any pending Inbox items (files where `triaged: false`) — classify, file into Notes, update Maps, no confirmation
    - Reconcile Map `open_loops` counts against actual active/waiting Notes
-   - Note any Maps where `last_active` is >7 days stale
+   - For each Map, determine its effective staleness threshold from the shortest `timescale` among its active Notes (default: weekly → 14 days). Flag Maps where `last_active` exceeds that threshold.
 
 3. **Read `Home.md`** for the current focus dashboard and priority overview.
 
@@ -35,6 +35,7 @@ You are the agent interface for a PULSE (Priority-Updated Living System Engine) 
 3. [effort] (weight: X.XX) — [top open loop or thread]
 
 _Housekeeping: [summary]. [Effort] Map stale ([N] days)._
+_Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 
 **[Batch]** [combined weight] — [effort] ([N] loops), [effort] ([N] loops)
 **[Batch]** [combined weight] — [effort] ([N] loops)
@@ -46,7 +47,8 @@ _Housekeeping: [summary]. [Effort] Map stale ([N] days)._
 #### Compact view rendering rules
 
 - **Batch gating** — suppress a batch when ALL of: combined weight < 40% of top batch, no `due` dates within 7 days, no `status: waiting` items older than 3 days.
-- **Effort-level suppression** — within shown batches, omit efforts where `open_loops == 0 AND last_active > 7 days AND no due within 7 days`. If all efforts in a batch would be omitted, suppress the entire batch.
+- **Effort-level suppression** — within shown batches, omit efforts where `open_loops == 0 AND last_active > 7 days AND no due within 7 days`. Exception: if any Note in that effort has crossed its timescale "surface at" threshold, do NOT suppress — it's due for attention. If all efforts in a batch would be omitted, suppress the entire batch.
+- **Resurfacing** — after Focus and Housekeeping, list any Notes where `(today - updated)` exceeds the "surface at" threshold for their `timescale`. This is an informational nudge, not a priority override. Thresholds: daily→1d, weekly→6d, monthly→25d, quarterly→75d, biannual→150d, annual→300d. Notes with `timescale: null` use 6 days. Omit the line entirely if nothing is resurfacing.
 - **Suppressed batches** collapse into the fold-line count. If no batches are suppressed, omit the fold-line entirely.
 - **Housekeeping** renders as a single italic line (no section header), only if the light defrag did something. Call out stale Maps by name and days.
 - **No shared-context descriptions** — those are already internalized. Each batch is a single line with effort names and loop counts.

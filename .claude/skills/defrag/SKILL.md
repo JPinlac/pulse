@@ -21,7 +21,7 @@ $ARGUMENTS can specify `light` or `full` (default: `full`).
 
 1. **Auto-triage Inbox** — run the auto-triage process on any `Inbox/` items where `triaged: false`. Match content against Maps to assign efforts, create Notes, update Maps. No confirmation needed.
 2. **Reconcile Map counts** — for each Map, count actual `active`/`waiting` Notes linked via `efforts[]` and compare to `open_loops` in frontmatter. Fix any mismatches.
-3. **Flag obvious issues** — note any Maps where `last_active` is >7 days stale.
+3. **Flag obvious issues** — for each Map, determine its effective staleness threshold from the shortest `timescale` among its active Notes (default: weekly → 14 days if no Notes have timescale set). Flag Maps where `last_active` exceeds that threshold.
 4. **Report briefly** — one-line summary for the `/pulse` briefing: "Auto-triaged N items, reconciled M Map counts, K stale Maps flagged."
 
 ### Full Pass (after `/close` or manual)
@@ -34,7 +34,19 @@ Run everything in the light pass, plus:
 
 7. **Catch misclassifications** — for each Note triaged today (or recently), read the content body and compare against the assigned `efforts[]`. If the content clearly doesn't match the effort's Map purpose, flag it: "Possible misclassification: [note title] assigned to [effort] — content seems more like [suggested effort]."
 
-8. **Flag stale items** — active Notes with `updated` date 14+ days ago. Present as: "Stale: [note title] ([effort]) — last touched [date]. Still active?"
+8. **Flag stale items** — active Notes where `(today - updated)` exceeds the stale threshold for that Note's `timescale`. Thresholds (at ~150% of natural period):
+
+   | timescale | stale after |
+   |-----------|-------------|
+   | daily | 3 days |
+   | weekly | 14 days |
+   | monthly | 45 days |
+   | quarterly | 135 days |
+   | biannual | 270 days |
+   | annual | 545 days |
+   | null | 14 days (default) |
+
+   Present as: "Stale: [note title] ([effort]) — last touched [date], timescale: [value]. [N] days overdue."
 
 9. **Merge candidates** — Notes in the same effort with overlapping titles or content. Present as: "Possible merge: [note A] and [note B] in [effort]."
 
@@ -51,7 +63,7 @@ Run everything in the light pass, plus:
 - Map counts reconciled: N corrections
 - Flagged for review:
   - N possible misclassifications
-  - N stale items (14+ days untouched)
+  - N stale items (past their timescale window)
   - N merge candidates
 ```
 
