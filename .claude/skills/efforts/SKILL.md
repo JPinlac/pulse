@@ -33,7 +33,21 @@ If `efforts.yaml` does not exist when any action is attempted:
 2. Ask: "Want to start with these, or tell me about your life and I'll tailor them?"
 3. If the user accepts defaults → write `efforts.yaml` with the 3 defaults and 3 context batches, create Maps in `Maps/`
 4. If the user describes their life → generate a tailored `efforts.yaml` (aim for 3-5 efforts to start), create Maps
-5. After bootstrap, proceed with the originally requested action (or `/pulse` if they came from there)
+5. Run the Sync Slug Table procedure
+6. After bootstrap, proceed with the originally requested action (or `/pulse` if they came from there)
+
+---
+
+### Sync Slug Table
+
+After any mutation to `efforts.yaml` (add, splinter, merge, bootstrap), update the slug cache in root `CLAUDE.md`:
+
+1. Read `efforts.yaml` for the current active effort list
+2. Find the block between `<!-- SLUG-TABLE-START` and `<!-- SLUG-TABLE-END -->`
+3. Replace with a fresh table: columns `Slug`, `Batch`, `Aliases`; sorted by batch (alpha) then base_priority desc; skip archived efforts
+4. If sentinels don't exist in `CLAUDE.md`, insert the full block under `## Effort & Batch Definitions`
+
+Self-healing — any mutation auto-corrects drift.
 
 ---
 
@@ -76,6 +90,7 @@ If the litmus test passes:
 5. Append to `efforts.yaml`
 6. Create the Map in `Maps/` using the Map template frontmatter
 7. Report what was created
+8. Run the Sync Slug Table procedure
 
 ---
 
@@ -94,6 +109,7 @@ Splitting an effort that has grown too complex into sub-efforts.
 6. Archive the parent effort: set its Map status to `archived`, remove from active efforts in `efforts.yaml` (keep a YAML comment noting what it splintered into)
 7. Update `efforts.yaml` with new efforts
 8. Report: what was created, what was migrated, what was archived
+9. Run the Sync Slug Table procedure
 
 **Guard**: If the parent effort has fewer than 3 active threads, flag that the split may be premature. The user can override.
 
@@ -110,6 +126,7 @@ Combining two efforts that have converged or where one has become redundant.
 5. Archive the absorbed effort(s): set Map status to `archived`, add YAML comment in `efforts.yaml` noting the merge
 6. Update `efforts.yaml`
 7. Report: what was merged, what threads were combined
+8. Run the Sync Slug Table procedure
 
 ---
 
