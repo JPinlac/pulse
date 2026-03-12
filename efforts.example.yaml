@@ -1,0 +1,62 @@
+# PULSE — Effort Configuration
+#
+# Define your efforts (life domains) here. Each effort gets a Map file
+# that serves as its source of truth in the vault.
+#
+# Fields:
+#   name           — Human-readable name (used as Map title)
+#   slug           — Lowercase, hyphenated identifier (used in frontmatter)
+#   base_priority  — Life-importance anchor, 1-10 (10 = highest)
+#   context_batch  — Group name for minimizing context switching
+#   purpose        — One-line description of why this effort matters
+
+efforts:
+  - name: "My Job"
+    slug: my-job
+    base_priority: 9
+    context_batch: Work
+    purpose: "Day job that pays the bills"
+
+  - name: "Side Project"
+    slug: side-project
+    base_priority: 5
+    context_batch: Projects
+    purpose: "The thing I build on weekends"
+
+  - name: "Health"
+    slug: health
+    base_priority: 7
+    context_batch: Personal
+    purpose: "Exercise, nutrition, sleep"
+
+  - name: "Learning"
+    slug: learning
+    base_priority: 6
+    context_batch: Personal
+    purpose: "Books, courses, skills I'm developing"
+
+# Context batches group efforts along two axes:
+#   shared_context — the problem domain: tools, codebases, environments, stakeholder worlds
+#   mindset       — the cognitive mode: energy state and type of thinking
+#
+# Domain (shared_context) is the primary axis. Switching domains forces a full mental
+# model reload. Mindset is secondary — switching energy states within the same domain
+# is cheaper than switching domains within the same energy state.
+
+context_batches:
+  - name: Work
+    shared_context:
+      - "IDE / terminal workflow"
+      - "engineering mental models"
+      - "team stakeholders and processes"
+    mindset: "Analytical, execution-focused"
+  - name: Projects
+    shared_context:
+      - "personal codebases"
+      - "creative tooling"
+    mindset: "Creative, exploratory"
+  - name: Personal
+    shared_context:
+      - "physical environment"
+      - "bodily awareness"
+    mindset: "Reflective, embodied"

@@ -1,0 +1,8 @@
+# Obsidian config (user preference, not portable)
+.obsidian/
+
+# Claude Code auto-memory (personal to each user)
+.claude/memory/
+
+# OS files
+.DS_Store
