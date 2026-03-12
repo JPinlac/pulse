@@ -262,7 +262,7 @@ priority_weight = min(base_score + recency_boost + urgency_spike + effort_factor
 Weights are recalculated:
 - At the start of each session (via `/pulse`)
 - On demand (via `/recompute`)
-- After significant vault changes (triage, review)
+- After significant vault changes (triage, defrag)
 
 The agent always shows the math when weights change, so the user can challenge or adjust.
 
