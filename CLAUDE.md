@@ -69,5 +69,8 @@ When loading an effort for context, read the Map only. Read linked Notes only wh
 4. Auto-triage picks it up at next `/pulse` or `/triage` — no human confirmation needed
 5. `/defrag` catches any misclassifications later
 
+### Display Behavior
+Low-value batches are soft-suppressed in `/pulse` output. `/birdseyereview` provides a full unsuppressed landscape audit when needed. Suppressed batches and low-signal efforts (0 loops, stale, no deadlines) are folded — say "unfold" for the full landscape.
+
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.
