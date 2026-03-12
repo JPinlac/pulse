@@ -435,8 +435,10 @@ domains: [<slug>, ...]          # Filled during triage
 ### Capture Flow (`/capture`)
 
 ```
-1. Create Inbox/YYYY-MM-DD-<slug>.md with capture frontmatter
-2. Confirm capture: "Captured: [title]. It's in the Inbox — auto-triage picks it up at next /pulse or /triage."
+1. Delegate to a background sub-agent (zero context disruption to main conversation)
+2. Sub-agent creates Inbox/YYYY-MM-DD-<slug>.md with capture frontmatter
+3. Confirm immediately (don't wait for agent): "Captured: [title]. Filing in background."
+4. Auto-triage picks it up at next /pulse or /triage.
 ```
 
 ### Auto-Triage (`/triage`)
@@ -598,3 +600,4 @@ Record significant changes to the system here. Date, what changed, why.
 | 2026-03-12 | Created efforts.yaml as canonical effort/batch config | Single source of truth for effort definitions, batch groupings, and domain aliases. Documentation and skills defer to this file. |
 | 2026-03-12 | Compact pulse briefing with fold-line suppression | Pulse now shows a compact view by default — batch gating + effort-level suppression collapse low-signal items into a fold-line. Full landscape on request ("unfold"). |
 | 2026-03-12 | Conversational Daily Note flow + defrag logging | Daily Note now accretes through /pulse conversation (not batch-generated). /defrag logs to Daily Note. /birdseyereview repositioned as periodic audit. /focus clarified as deep flow tool. |
+| 2026-03-12 | Background sub-agent capture | /capture now delegates to a background agent for zero context disruption. Main conversation flow is preserved. |
