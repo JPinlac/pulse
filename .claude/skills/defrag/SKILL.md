@@ -1,6 +1,6 @@
 ---
 name: defrag
-description: Organizational cleanup — auto-defer, reconcile Maps, catch misclassifications, flag stale items. Runs after /review (full), during /pulse (light), or manually.
+description: Organizational cleanup — auto-defer, reconcile Maps, catch misclassifications, flag stale items. Runs after /close (full), during /pulse (light), or manually.
 user-invocable: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
@@ -11,7 +11,7 @@ Absorbs all bookkeeping from triage and review. Keeps the vault consistent witho
 
 ### Entry Points
 
-- **After `/review`**: full pass (auto-triggered)
+- **After `/close`**: full pass (auto-triggered)
 - **During `/pulse`**: light pass (auto-triggered)
 - **Manual `/defrag`**: full pass on demand
 
@@ -24,7 +24,7 @@ $ARGUMENTS can specify `light` or `full` (default: `full`).
 3. **Flag obvious issues** — note any Maps where `last_active` is >7 days stale.
 4. **Report briefly** — one-line summary for the `/pulse` briefing: "Auto-triaged N items, reconciled M Map counts, K stale Maps flagged."
 
-### Full Pass (after `/review` or manual)
+### Full Pass (after `/close` or manual)
 
 Run everything in the light pass, plus:
 
