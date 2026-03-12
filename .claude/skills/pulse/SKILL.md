@@ -69,7 +69,15 @@ _Housekeeping: [summary]. [Effort] Map stale ([N] days)._
 [Only if any Maps have last_active > 7 days. Otherwise omit.]
 ```
 
-8. **Wait for direction.** Do not generate a checklist unless asked. Do not assume what the user wants to work on.
+8. **Wait for direction.** Do not assume what the user wants to work on. When the user indicates direction, build the day's agenda (step 9).
+
+9. **Build the Daily Note from conversation** — when the user indicates what they want to work on:
+
+   a. Create `Daily/YYYY-MM-DD.md` if it doesn't exist (use Daily Note template frontmatter).
+   b. Pull top items from the Maps the user indicated interest in — these go first, grouped by batch.
+   c. Scan remaining Maps for time-sensitive or routine items. Add as a lightweight section so nothing falls through cracks.
+   d. Omit empty efforts. Keep it to 8-15 items — working agenda, not exhaustive audit.
+   e. Present the agenda in conversation for one confirmation pass. After confirmation, write to file. Subsequent Daily Note updates during the session happen silently.
 
 ### Note on Inbox
 Inbox items are auto-triaged during the light defrag step. There is no separate "N items pending triage" line — by the time the briefing is presented, the Inbox should be clear. If auto-triage could not classify an item, mention it in the Housekeeping line.

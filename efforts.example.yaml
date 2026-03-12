@@ -55,11 +55,13 @@ context_batches:
       - "engineering mental models"
       - "team stakeholders and processes"
     mindset: "Analytical, execution-focused"
+
   - name: Projects
     shared_context:
       - "personal codebases"
       - "creative tooling"
     mindset: "Creative, exploratory"
+
   - name: Personal
     shared_context:
       - "physical environment"

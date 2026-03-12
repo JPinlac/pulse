@@ -55,6 +55,14 @@ Run everything in the light pass, plus:
   - N merge candidates
 ```
 
+12. **Log to Daily Note** — append a timestamped entry under `## Defrag Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist. One line:
+
+   `- HH:MM — triaged N inbox, deferred N threads, reconciled N maps, flagged N stale`
+
+   Light pass prefix: `- HH:MM (light) — ...`
+
+   If no Daily Note exists yet, create one with minimal frontmatter and just the Defrag Log section.
+
 ### Principles
 
 - **Act first, report after.** No confirmation cycles. The cost of a correctable mistake is lower than the cost of interrupting the human.
