@@ -10,6 +10,14 @@ Read effort definitions (slugs, base_priority, context_batch, purpose) from:
 
 If Maps exist, they are authoritative. If Maps/ is empty, read `efforts.yaml` and generate Maps first.
 
+<!-- SLUG-TABLE-START — managed by /efforts, do not edit manually -->
+| Slug | Batch | Aliases |
+|------|-------|---------|
+| maintenance | Maintenance | health, house, chores, admin |
+| personal-projects | Projects | projects, hobby, side project |
+| work | Work | job, career |
+<!-- SLUG-TABLE-END -->
+
 ## Context Batches
 
 Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Read batch definitions (`shared_context` list + `mindset` string) from `efforts.yaml`. Read each effort's batch assignment from Map frontmatter (`context_batch` field). Domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
