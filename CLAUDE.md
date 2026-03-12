@@ -18,7 +18,7 @@ Context batches group efforts along two axes: **problem domain** (primary) and *
 - `Home.md` — Dynamic focus dashboard
 - `Maps/` — One MOC per effort (source of truth)
 - `Notes/` — All content notes (flat)
-- `Daily/` — Generated checklists (YYYY-MM-DD.md)
+- `Daily/` — Session agenda + effort log (YYYY-MM-DD.md)
 - `Inbox/` — Zero-friction capture
 - `Templates/` — Obsidian templates
 - `Queries/` — Saved Dataview queries
@@ -31,13 +31,29 @@ Context batches group efforts along two axes: **problem domain** (primary) and *
 3. If Maps/ is empty: read `efforts.yaml`, generate Maps, then proceed
 4. If daily session: generate `Daily/YYYY-MM-DD.md` from Map open loops
 
+### Daily Note — Living Session Record
+The Daily Note (`Daily/YYYY-MM-DD.md`) accretes through conversation, not batch-generated.
+- **After `/pulse` briefing**: when the user indicates direction, create/update the Daily Note with a prioritized agenda. Pull focused items from relevant Maps AND routine life items so nothing falls through cracks. Aim for 8-15 items. Present in chat for one confirmation pass, then commit to file.
+- **During the session**: log effort silently — context switches, completions, new items that emerge.
+- **`/defrag`**: appends a compressed log entry to the Daily Note.
+- **`/close`**: caps the Daily Note with End of Day reflection.
+
+The Daily Note is the single source of truth for what was planned and what actually happened today.
+
 ### Frontmatter is Agent-Managed
 The user never manually writes metadata. Agent writes/updates all YAML frontmatter.
+
+### Map Entry Compression
+Maps are indices, not containers. When a Note exists for a thread:
+- Map entry = `[[note-slug]] — [≤15-word summary] (subtype, date)`
+- Never inline note content or extended summaries into Maps
+- Bare action items (no Note) remain as plain text in Active Threads
+When loading an effort for context, read the Map only. Read linked Notes only when actively working on that thread.
 
 ### Note Types
 - `type: map` — Effort MOCs in `Maps/`
 - `type: note` — Content notes (subtypes: note, log, plan, reference, capture)
-- `type: daily` — Generated daily checklists
+- `type: daily` — Session agenda + effort log
 - `type: capture` — Inbox items pending triage
 
 ### Note Lifecycle
