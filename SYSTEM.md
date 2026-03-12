@@ -108,11 +108,11 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 └── .claude/
     └── skills/              Slash command definitions.
         ├── pulse/
-        ├── checklist/
+        ├── birdseyereview/
         ├── capture/
         ├── triage/
         ├── focus/
-        ├── review/
+        ├── close/
         ├── recompute/
         └── defrag/
 ```
@@ -415,7 +415,7 @@ domains: [<slug>, ...]          # Filled during triage
 5. Proceed with normal pulse briefing
 ```
 
-### Checklist Generation (`/checklist`)
+### Checklist Generation (`/birdseyereview`)
 
 ```
 1. Scan all Maps for open loops and active threads
@@ -456,7 +456,7 @@ domains: [<slug>, ...]          # Filled during triage
 5. Update Map last_active (recency boost)
 ```
 
-### End-of-Session Reflection (`/review`)
+### End-of-Session Reflection (`/close`)
 
 ```
 1. Read today's Daily note and Map activity
@@ -478,7 +478,7 @@ Light pass (during /pulse):
 3. Flag stale Maps (last_active > 7 days)
 4. Report briefly — one-line summary for the pulse briefing
 
-Full pass (after /review or manual):
+Full pass (after /close or manual):
 All of the above, plus:
 5. Auto-defer unchecked Daily note items to tomorrow
 6. Auto-complete checked items (update Note status)
@@ -541,11 +541,11 @@ Skills are defined in `.claude/skills/` and invoked as slash commands.
 | Skill | File | Trigger | Arguments |
 |-------|------|---------|-----------|
 | `/pulse` | `pulse/SKILL.md` | Session start (includes light defrag) | None |
-| `/checklist` | `checklist/SKILL.md` | Generate/review daily list | Optional: date |
+| `/birdseyereview` | `birdseyereview/SKILL.md` | Generate/review daily list | Optional: date |
 | `/capture` | `capture/SKILL.md` | Quick capture | The thought to capture |
 | `/triage` | `triage/SKILL.md` | Auto-process inbox (no confirmation) | Optional: specific file |
 | `/focus` | `focus/SKILL.md` | Pivot to effort | Effort name (flexible matching) |
-| `/review` | `review/SKILL.md` | End-of-session reflection + auto-defrag | Optional: date |
+| `/close` | `close/SKILL.md` | End-of-session reflection + auto-defrag | Optional: date |
 | `/recompute` | `recompute/SKILL.md` | Refresh priority weights | Optional: effort spike |
 | `/defrag` | `defrag/SKILL.md` | Organizational cleanup (full pass) | Optional: `light` or `full` |
 

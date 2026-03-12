@@ -30,16 +30,27 @@ PULSE is an agent-first personal knowledge system built on Obsidian and Claude C
 
 ## Commands
 
+### Session Skills
+
+Your workflow touchpoints — these are the commands you use to drive a session.
+
 | Command | What it does |
 |---------|-------------|
 | `/pulse` | Start a session — auto-triages Inbox, loads priorities, shows what matters now |
-| `/checklist` | Generate or review today's daily checklist |
 | `/capture` | Capture a thought, idea, or task to Inbox |
-| `/triage` | Auto-process Inbox items into Notes and Maps |
+| `/birdseyereview` | Bird's-eye view of all efforts — full, non-compressed daily overview |
 | `/focus [effort]` | Pivot to a specific effort — inspiration override |
-| `/review` | End-of-session reflection — what happened, what emerged. Auto-triggers defrag. |
-| `/recompute` | Recalculate all priority weights across Maps |
+| `/close` | Session-close ritual — reflection, then auto-cleanup |
+
+### System Skills
+
+Bookkeeping that normally runs automatically (e.g., `/defrag` fires after `/close`, `/triage` runs during `/pulse`). Safe to invoke manually anytime — they're idempotent.
+
+| Command | What it does |
+|---------|-------------|
+| `/triage` | Auto-process Inbox items into Notes and Maps |
 | `/defrag` | Organizational cleanup — reconcile, defer, flag stale items |
+| `/recompute` | Recalculate all priority weights across Maps |
 
 ## How It Works
 
@@ -90,13 +101,13 @@ Edit `base_priority` in `efforts.yaml` or directly in the Map's frontmatter (the
 > /capture automate the deploy pipeline
   Agent files it to Inbox. Auto-triage picks it up next pulse.
 
-> /checklist
+> /birdseyereview
   Agent generates today's Daily note — tasks batched by context.
 
 > "Actually, I want to work on the side project first"
   Agent pivots. Loads the Map. Logs the switch.
 
-> /review
+> /close
   Agent reflects on what happened, what emerged, what patterns are forming.
   Then auto-runs defrag to handle all bookkeeping.
 ```

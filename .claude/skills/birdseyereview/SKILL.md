@@ -1,13 +1,13 @@
 ---
-name: checklist
-description: Generate or review today's daily checklist. Scans all Maps for open loops, batches by context group, and produces a Daily note. Use when starting focused work or reviewing progress.
+name: birdseyereview
+description: Bird's-eye view of all efforts — scans all Maps for open loops, batches by context group, and produces a Daily note with everything visible. No suppression.
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Edit, Write
 ---
 
-## Daily Checklist Generation
+## Bird's-Eye Review
 
-Generate or update today's daily checklist at `Daily/YYYY-MM-DD.md`.
+Generate or update today's daily overview at `Daily/YYYY-MM-DD.md`. Shows every effort — nothing compressed or suppressed.
 
 ### If no daily note exists for today:
 
@@ -21,16 +21,7 @@ Generate or update today's daily checklist at `Daily/YYYY-MM-DD.md`.
 
 5. **Within each batch**, sort items by individual effort priority weight.
 
-6. **Apply batch gating** — soft-suppress low-value batches:
-   - A batch is suppressed when ALL of the following are true:
-     - Combined weight is below 40% of the top batch's combined weight
-     - No items with `due` dates within 7 days
-     - No `status: waiting` items older than 3 days
-   - Suppressed batches render as a single collapsed line:
-     `> ~[Batch Name] [weight: X.XX] — N items, nothing urgent`
-   - Full batches render normally with checklist items
-
-7. **Generate the Daily note** using the template structure:
+6. **Generate the Daily note** using the template structure:
 
 ```markdown
 ---
@@ -53,7 +44,8 @@ items_deferred: 0
 ## Context C: [batch name] [combined weight: X.XX]
 - [ ] Item [[link]]
 
-> ~[Suppressed Batch] [weight: X.XX] — N items, nothing urgent
+## Context D: [batch name] [combined weight: X.XX]
+- [ ] Item [[link]]
 
 ---
 ## Annotations
@@ -61,7 +53,7 @@ items_deferred: 0
 ## End of Day
 ```
 
-8. **Write the file** to `Daily/YYYY-MM-DD.md`.
+7. **Write the file** to `Daily/YYYY-MM-DD.md`.
 
 ### If a daily note already exists:
 
@@ -71,8 +63,8 @@ items_deferred: 0
 4. Ask if the user wants to add, remove, or reprioritize items.
 
 ### Principles
+- Every batch is rendered fully — no suppression, no collapsed lines
 - Each checklist item should link to a Note or Map section
 - Keep items actionable and concrete, not vague
 - If an effort has no open loops, omit it from the checklist
-- Never more than 10-12 items total — this is a focused day, not a backlog dump
 - $ARGUMENTS can optionally specify a date other than today

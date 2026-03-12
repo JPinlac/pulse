@@ -1,11 +1,11 @@
 ---
-name: review
-description: End-of-session reflection — what happened, what emerged, what patterns are forming. Flags items needing attention, then auto-triggers /defrag.
+name: close
+description: Session-close ritual — reflect on what happened, what emerged, what patterns are forming. Flags items needing attention, then auto-triggers /defrag.
 user-invocable: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-## End-of-Session Reflection
+## Session Close
 
 Pure reflection. No item-by-item status decisions. The agent presents a narrative, the human reflects, then defrag handles the bookkeeping.
 
