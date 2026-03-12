@@ -24,5 +24,8 @@ items_deferred: 0
 ## Annotations
 <!-- Free space to annotate items as you work -->
 
+## Session Log
+<!-- Agent-appended: recompute snapshots, defrag traces, triage decisions, suppression reasoning -->
+
 ## End of Day
 <!-- Agent fills: what moved, what's deferred, what emerged -->

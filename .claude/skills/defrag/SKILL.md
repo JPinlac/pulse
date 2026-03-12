@@ -67,13 +67,32 @@ Run everything in the light pass, plus:
   - N merge candidates
 ```
 
-12. **Log to Daily Note** — append a timestamped entry under `## Defrag Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist. One line:
+12. **Log to Daily Note** — append a timestamped decision trace under `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
 
-   `- HH:MM — triaged N inbox, deferred N threads, reconciled N maps, flagged N stale`
+   Format:
+   ```
+   ### Defrag — HH:MM [full|light]
 
-   Light pass prefix: `- HH:MM (light) — ...`
+   **Triage**: N items — [item-slug → effort(s)], ...
+   **Reconciled Maps**:
+   - [effort]: open_loops [old]→[new], last_active [unchanged|updated]
+   - [effort]: open_loops [old]→[new]
+   **Stale checks**:
+   - [note-slug] ([timescale], [N] days since update) → [flagged|ok]
+   - [note-slug] ([timescale], [N] days since update) → [flagged|ok]
+   **Deferred**: [item-slug], [item-slug] (from today's agenda)
+   **Completed**: [item-slug] (status → done)
+   **Misclassifications**: [note-slug] assigned [effort], content suggests [effort]
+   **Merge candidates**: [note-a] + [note-b] in [effort]
 
-   If no Daily Note exists yet, create one with minimal frontmatter and just the Defrag Log section.
+   Summary: triaged N, deferred N, reconciled N, flagged N stale, N merge candidates
+   ```
+
+   Omit any section that has zero items (e.g., skip **Merge candidates** if none found). The summary line at the end is still compact for scanning, but the per-item traces above it make each decision traceable.
+
+   Light pass uses the same format but only includes sections relevant to the light pass (Triage, Reconciled Maps, Stale checks).
+
+   If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
 
 ### Principles
 

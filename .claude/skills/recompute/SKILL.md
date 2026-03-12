@@ -58,6 +58,22 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
 - [effort] ↓ X.XX → X.XX (reason)
 ```
 
+8. **Log recompute snapshot** — append a timestamped weight table to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist. This is the same table from step 7, persisted for later debugging.
+
+   Format:
+   ```
+   ### Recompute — HH:MM
+
+   | Effort | Base | Recency | Urgency | Effort | Weight | Δ |
+   |--------|------|---------|---------|--------|--------|---|
+   | [name] | X.XX | +X.XX   | +X.XX   | +X.XX  | X.XX   | ↑/↓/= X.XX |
+   ...
+
+   Urgency sources: [note-slug (due in N days)], [note-slug (waiting N days)]
+   ```
+
+   Include the delta column showing change from previous weight. Include the urgency sources line listing which specific Notes contributed urgency spikes. If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
+
 ### Principles
 - Weights reflect reality, not aspiration
 - High base_priority efforts should almost always be near the top unless there's genuine urgency elsewhere
