@@ -1,7 +1,9 @@
 # PULSE — Effort Configuration
 #
-# Define your efforts (life domains) here. Each effort gets a Map file
-# that serves as its source of truth in the vault.
+# Your efforts are the areas of your life you want to track and manage.
+# Each effort gets a Map file that serves as its source of truth.
+#
+# Run /efforts to manage these — add, splinter, merge, or review.
 #
 # Fields:
 #   name           — Human-readable name (used as Map title)
@@ -12,33 +14,26 @@
 #   aliases        — Optional flexible-match terms for /focus resolution
 
 efforts:
-  - name: "My Job"
-    slug: my-job
+  - name: "Work"
+    slug: work
     base_priority: 9
     context_batch: Work
-    purpose: "Day job that pays the bills"
-    aliases: [job, work]
+    purpose: "Primary professional obligation"
+    aliases: [job, career]
 
-  - name: "Side Project"
-    slug: side-project
+  - name: "Life Maintenance"
+    slug: maintenance
+    base_priority: 7
+    context_batch: Maintenance
+    purpose: "Health, home, chores, admin — things that rot if ignored"
+    aliases: [health, house, chores, admin]
+
+  - name: "Personal Projects"
+    slug: personal-projects
     base_priority: 5
     context_batch: Projects
-    purpose: "The thing I build on weekends"
-    aliases: [project, hobby]
-
-  - name: "Health"
-    slug: health
-    base_priority: 7
-    context_batch: Personal
-    purpose: "Exercise, nutrition, sleep"
-    aliases: [exercise, gym]
-
-  - name: "Learning"
-    slug: learning
-    base_priority: 6
-    context_batch: Personal
-    purpose: "Books, courses, skills I'm developing"
-    aliases: [study, courses]
+    purpose: "Creative and growth work you do for yourself"
+    aliases: [projects, hobby, side project]
 
 # Context batches group efforts along two axes:
 #   shared_context — the problem domain: tools, codebases, environments, stakeholder worlds
@@ -56,14 +51,15 @@ context_batches:
       - "team stakeholders and processes"
     mindset: "Analytical, execution-focused"
 
+  - name: Maintenance
+    shared_context:
+      - "physical environment"
+      - "bodily awareness"
+      - "routines and logistics"
+    mindset: "Practical, embodied"
+
   - name: Projects
     shared_context:
       - "personal codebases"
       - "creative tooling"
     mindset: "Creative, exploratory"
-
-  - name: Personal
-    shared_context:
-      - "physical environment"
-      - "bodily awareness"
-    mindset: "Reflective, embodied"
