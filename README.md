@@ -82,9 +82,8 @@ Edit `base_priority` in `efforts.yaml` or directly in the Map's frontmatter (the
 > /pulse
   Agent reads Maps, shows top priorities.
 
-> "I had an idea about automating our deploy pipeline"
-  Agent captures it, triages to the right effort,
-  creates a Note, updates the Map.
+> /capture automate the deploy pipeline
+  Agent files it to Inbox. Auto-triage picks it up next pulse.
 
 > /checklist
   Agent generates today's Daily note — tasks batched by context.
@@ -93,10 +92,10 @@ Edit `base_priority` in `efforts.yaml` or directly in the Map's frontmatter (the
   Agent pivots. Loads the Map. Logs the switch.
 
 > /review
-  Agent walks through what moved, what's deferred, what emerged.
+  Agent reflects on what happened, what emerged, what patterns are forming.
+  Then auto-runs defrag to handle all bookkeeping.
 ```
 
 ## Full Reference
 
 See `SYSTEM.md` for the complete design spec: priority formula, frontmatter schemas, workflows, and design decisions.
-# pulse

@@ -43,18 +43,17 @@ Process untriaged items from `Inbox/` into the PULSE system. Executes immediatel
    f. **Mark capture as triaged**:
       - Update the Inbox file's frontmatter: set `triaged: true` and fill in `domains[]`
 
-4. **Log results to today's Daily note** (`Daily/YYYY-MM-DD.md`) — append a triage log entry under a `## Triage Log` section. If no Daily note exists, create one. Do not report results back to the user in conversation — the log is the record.
+4. **Report summary**:
 
 ```
-## Triage Log
-- [title] → [domain-slug] (new note)
-- [title] → [domain-slug] (appended to "[existing note]")
-- [title] → [domain-a, domain-b] (new note, cross-domain)
+Auto-triaged N items:
+- [title] → [domain(s)] (new note / appended to "[existing note]")
+- [title] → [domain(s)] (new note / appended to "[existing note]")
+...
 ```
 
 ### Principles
-- Execute and log — no confirmation cycles, no conversational reports
-- The cost of a misclassified note is low (defrag catches it later); the cost of context injection is real
+- **No confirmation cycles.** Execute immediately. The cost of a misclassified note is low — `/defrag` catches mistakes later.
 - Cross-domain notes are encouraged — don't force single-domain assignment
 - If content could go multiple ways, pick the best fit and note the alternative in the log
 - $ARGUMENTS can optionally specify a specific Inbox file to triage
