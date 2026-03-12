@@ -1,6 +1,6 @@
 # PULSE — Priority-Updated Living System Engine
 
-PULSE is an agent-first personal knowledge system built on Obsidian and Claude Code. You talk, the agent does the bookkeeping — capturing thoughts, computing priorities, and surfacing what matters now.
+PULSE is an agent-first personal knowledge system built to reduce the human context load. You talk, the agent does the bookkeeping — capturing thoughts, computing priorities, and surfacing what matters now. Built on Claude Code's CLI interface and portable markdown files. 
 
 ## Workflow
 
