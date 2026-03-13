@@ -47,9 +47,27 @@ Only include if genuinely noticed — don't fabricate patterns.]
 
 8. **Auto-trigger `/defrag`** — run a full defrag pass. This handles all the mechanical bookkeeping: auto-defer open items, auto-mark checked items done, reconcile Maps, flag stale items.
 
+9. **Close with warmth** — after defrag completes, deliver a brief closing message:
+
+```
+### You're done.
+
+[1–2 sentences of genuine praise for what was accomplished today — specific to this session, not generic. Reference actual efforts touched or progress made.]
+
+Everything is filed. [If no due items remain open: "Your priority items are in good hands — nothing is falling through the cracks tonight. You can fully disconnect, be present, and rest without the background hum of open loops." If due items are still open: acknowledge them honestly — name what's outstanding, affirm that it's noted and won't be lost, but don't say it's okay to fully disconnect.]
+```
+
+   Tone guidelines:
+   - **Specific, not generic** — reference actual work done today, not a template affirmation
+   - **Brief** — 3–5 sentences total
+   - **Warm but not saccharine** — earned praise, not flattery
+   - **Honest** — don't offer false reassurance if due items are still open; acknowledge them and affirm they're tracked
+   - **Permissive** — explicit "it's okay to let go" framing only when the slate is genuinely clear
+
 ### Principles
 - **This is reflective, not bureaucratic.** No "defer/wait/done/drop?" loops.
 - Note what *emerged* — the unplanned connections are often the most valuable signal
 - The human reflects on meaning; the agent handles filing
 - If the human volunteers decisions during reflection, honor them immediately
+- **End with warmth** — earned praise for what was done and explicit permission to disconnect. The user should feel held, not just filed.
 - $ARGUMENTS can optionally specify a date other than today
