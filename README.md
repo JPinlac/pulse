@@ -1,6 +1,6 @@
 # PULSE — Priority-Updated Living System Engine
 
-PULSE is an agent-first personal knowledge system built on Obsidian and Claude Code. You talk, the agent does the bookkeeping — capturing thoughts, computing priorities, and surfacing what matters now.
+PULSE is an agent-first personal knowledge system built to **reduce the human context load**. You talk, the agent does the bookkeeping — capturing thoughts, computing priorities, and surfacing what matters now. Built on Claude Code's CLI interface and portable markdown files. 
 
 ## Workflow
 
@@ -83,7 +83,7 @@ PULSE is built in three stages. Each unlocks after the previous one earns trust 
 | Stage | Focus | Status |
 |-------|-------|--------|
 | **1. Structured Overview** | Batched, prioritized view of the full landscape. You verify the system tracks reality. | **Current** |
-| **2. Scope Reduction** | System earns the right to hide things. Shows only what needs you today. | Planned |
+| **2. Scope Reduction** | System earns the right to hide things. Shows only what needs you today. | Simple/partial |
 | **3. Attention Protection** | System manages cognitive budget as a resource. Pushes back on unnecessary switches. | Planned |
 
 Stage 1→2 is the hardest transition — it requires you to stop verifying. That trust only comes from daily use.
