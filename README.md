@@ -18,7 +18,7 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
 
 ## Quick Setup
 
-1. **Clone this repo** as your vault root (or add as a git submodule):
+1. **Clone this repo**:
    ```bash
    git clone <repo-url> my-vault
    cd my-vault
@@ -31,6 +31,12 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
    The agent walks you through setup and gives you a priority briefing. You're live.
 
 3. **Customize your efforts** — efforts are the persistent domains of your life (not tasks or projects). **PULSE works best when efforts reflect how *you* actually spend your attention.** Run `/efforts` to tailor them to your life, or add, splinter, merge, and review efforts at any time. (In case the bolding didn't get your attention. *I highly recommend doing this!*)
+
+4. **Close the session/day** - at the end of the session run the `/close` skill for a recap, some automatic management of any information, and a confirmation that there are no priority loops left open. Good work! If you forget to close a session don't worry, /pulse runs the automatic system management or you can manually run `defrag`. We do recommend getting into the habit of closing, being able to deeply relax and be fully present with whatever awaits is a blessing.
+
+   ```bash
+   /close
+   ```
 
 ## How It Works
 
