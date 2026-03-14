@@ -31,26 +31,40 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
    - Notes with `due` dates within 7 days → urgency_spike for their efforts
    - Notes with `status: waiting` that have been waiting >3 days → slight urgency bump
 
-3. **Calculate recency** from `last_active` and Daily notes:
+3. **Scan Minor Actions** across all Maps:
+   - For each Map, read its `## Minor Actions` section (if present)
+   - Resolve informal dates to absolute dates: "tonight" = today, "this weekend" = next Saturday, "before Friday" = Thursday, etc.
+   - Overdue or same-day items: +0.05 each to urgency_spike (max +0.15 from Minor Actions)
+   - Items due within 2 days: +0.03 each
+   - Minor Actions are first-class urgency signals — they feed the formula without requiring Note overhead
+
+4. **Calculate recency** from `last_active` and Daily notes:
    - Count how many of the last 7 daily notes touched each effort (via `efforts_touched`)
    - Each touch = +0.03, capped at +0.15
 
-4. **Calculate effort** from recent note activity:
+5. **Calculate effort** from recent note activity:
    - Count notes in each effort updated in the last 7 days
    - Sustained work (3+ notes updated) = +0.05 to +0.10
 
-5. **Compute and update** each Map's `priority_weight` in its frontmatter.
+6. **Compute raw weights** for each Map.
 
-6. **Update `Home.md`** — refresh the Current Focus section with the top 3-5 items based on new weights.
+7. **Apply calibration adjustments** — read `Notes/pulse-priority-calibration.md`:
+   - Check the **Patterns** section for documented systematic biases. If a pattern identifies a formula component consistently over/under-weighting a class of effort, apply the described adjustment.
+   - Check the **Corrections** log: if an effort has 3+ ordering corrections in the same direction (consistently ranked too high or too low), apply a calibration offset of +/- 0.03–0.05 in the correction direction.
+   - Calibration offsets are applied after raw weight computation but before capping at 1.0.
 
-7. **Present the results**:
+8. **Update** each Map's `priority_weight` in its frontmatter.
+
+9. **Update `Home.md`** — refresh the Current Focus section with the top 3-5 items based on new weights.
+
+10. **Present the results**:
 
 ```
 ## Priority Weights — [date]
 
-| Effort | Base | Recency | Urgency | Effort | Weight |
-|--------|------|---------|---------|--------|--------|
-| [name] | X.XX | +X.XX   | +X.XX   | +X.XX  | X.XX   |
+| Effort | Base | Recency | Urgency | Minor | Effort | Calibration | Weight |
+|--------|------|---------|---------|-------|--------|-------------|--------|
+| [name] | X.XX | +X.XX   | +X.XX   | +X.XX | +X.XX  | +/-X.XX     | X.XX   |
 ...
 
 ### Changes
@@ -58,21 +72,27 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
 - [effort] ↓ X.XX → X.XX (reason)
 ```
 
-8. **Log recompute snapshot** — append a timestamped weight table to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist. This is the same table from step 7, persisted for later debugging.
+11. **Log recompute snapshot** — append a timestamped weight table to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist. This is the same table from step 10, persisted for later debugging.
 
    Format:
    ```
    ### Recompute — HH:MM
 
-   | Effort | Base | Recency | Urgency | Effort | Weight | Δ |
-   |--------|------|---------|---------|--------|--------|---|
-   | [name] | X.XX | +X.XX   | +X.XX   | +X.XX  | X.XX   | ↑/↓/= X.XX |
+   | Effort | Base | Recency | Urgency | Minor | Effort | Cal | Weight | Δ |
+   |--------|------|---------|---------|-------|--------|-----|--------|---|
+   | [name] | X.XX | +X.XX   | +X.XX   | +X.XX | +X.XX  | +/-X.XX | X.XX | ↑/↓/= X.XX |
    ...
 
    Urgency sources: [note-slug (due in N days)], [note-slug (waiting N days)]
+   Minor Action sources: [item description (effort, due date/immediacy)]
+   Calibration applied: [effort: +/-X.XX (reason)] or "none"
    ```
 
    Include the delta column showing change from previous weight. Include the urgency sources line listing which specific Notes contributed urgency spikes. If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
+
+### Implicit Invocation
+
+The /recompute formula now runs inline during `/pulse` (step 3.5) and `/close` (step 6.5). When invoked inline, skip the presentation step (step 10) and the Home.md update (step 9) — those are handled by the calling skill. The Session Log entry is always written regardless of invocation mode.
 
 ### Principles
 - Weights reflect reality, not aspiration

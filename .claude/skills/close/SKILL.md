@@ -43,9 +43,20 @@ Only include if genuinely noticed — don't fabricate patterns.]
 
 6. **If the user volunteers status changes** during the reflection conversation (e.g., "that thing is done" or "drop that one"), apply them. But don't prompt for decisions on each item.
 
+6.5. **Session-end recompute** — run the /recompute formula inline to capture today's activity:
+   - Recency from today's work (efforts_touched in Daily Note)
+   - Completed items reduce open_loops, may reduce urgency
+   - New urgency signals from items that emerged during the session
+   - Minor Actions scanning (overdue items, newly added items)
+   - Apply calibration adjustments from `Notes/pulse-priority-calibration.md`
+   - Update Map weights in frontmatter
+   - Log updated weight table to Session Log (ensures next session starts from accurate baseline)
+
 7. **Update the Daily note** — fill in the `## End of Day` section with the reflection summary. Update `items_completed` and `items_deferred` counts, finalize `efforts_touched`.
 
 8. **Auto-trigger `/defrag`** — run a full defrag pass. This handles all the mechanical bookkeeping: auto-defer open items, auto-mark checked items done, reconcile Maps, flag stale items.
+
+8.5. **Set close flag** — after successful defrag + recompute, set `close_complete: true` in today's Daily Note frontmatter. This tells the next `/pulse` session that defrag and recompute already ran, so it can skip redundant startup work.
 
 9. **Close with warmth** — after defrag completes, deliver a brief closing message:
 

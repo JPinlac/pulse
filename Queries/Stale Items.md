@@ -5,7 +5,7 @@ description: Active items past their default staleness window (14 days). Agent-d
 # Stale Items
 
 ```dataview
-TABLE efforts, status, updated, timescale
+TABLE domains, status, updated, timescale
 FROM "Notes"
 WHERE status = "active" AND updated < date(today) - dur(14 days)
 SORT updated ASC

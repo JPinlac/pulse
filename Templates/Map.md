@@ -4,11 +4,11 @@ effort: {{effort-slug}}
 context_batch: {{context-batch}}
 priority_weight: 0.5
 base_priority: 5
-purpose: ""
-aliases: []
 last_active: {{date}}
 open_loops: 0
 related_efforts: []
+purpose: ""
+aliases: []
 tags: []
 ---
 # {{title}}
