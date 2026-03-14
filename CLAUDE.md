@@ -20,21 +20,23 @@ If Maps/ is empty, run `/efforts bootstrap` to generate starter Maps.
 
 Context batches group efforts along two axes: **problem domain** (primary) and **cognitive mode** (secondary). Read each effort's batch assignment from Map frontmatter (`context_batch` field). Problem domain switching (reloading a different codebase/stakeholder world) is more expensive than mode switching, so `shared_context` is the primary grouping signal.
 
-### Default Batch Definitions
-
 | Batch | Shared Context | Mindset |
-|-------|----------------|---------|
-| **Work** | IDE/terminal workflow, engineering mental models, team stakeholders and processes | Analytical, execution-focused |
-| **Maintenance** | Physical environment, bodily awareness, routines and logistics | Practical, embodied |
-| **Projects** | Personal codebases, creative tooling | Creative, exploratory |
+|-------|---------------|---------|
+| Work | IDE/terminal, engineering models, team stakeholders | Analytical, execution-focused |
+| Personal Projects | Personal codebases, creative tooling, solo decision-making | Creative, exploratory |
+| Dharma | Contemplative practice, texts and community, writing tools | Reflective, contemplative |
+| Home | Physical environment, family routines, bodily awareness | Practical, relational |
+| Maintenance | Physical environment, bodily awareness, routines/logistics | Practical, embodied |
+| Projects | Personal codebases, creative tooling | Creative, exploratory |
 
-New batches can be created during `/efforts add` when existing batches don't fit. Add new batch definitions to this table when created.
+New batches are created via `/efforts add` and added to this table.
 
 ## Vault Structure
 - `Home.md` — Dynamic focus dashboard
-- `Maps/` — One MOC per effort (source of truth)
+- `Maps/` — One MOC per effort (source of truth); may include `## Minor Actions` sections
 - `Notes/` — All content notes (flat)
-- `Daily/` — Session agenda + effort log (YYYY-MM-DD.md)
+- `Notes/pulse-priority-calibration.md` — Priority correction log, PAR tracking, calibration offsets
+- `Daily/` — Session agenda + effort log (YYYY-MM-DD.md); `close_complete` flag in frontmatter signals next `/pulse` to skip redundant defrag+recompute
 - `Inbox/` — Zero-friction capture
 - `Templates/` — Obsidian templates
 - `Queries/` — Saved Dataview queries
@@ -59,11 +61,12 @@ The Daily Note is the single source of truth for what was planned and what actua
 ### Session Log — Decision Trace Layer
 The `## Session Log` section in each Daily Note captures agent decisions for later debugging. This is not user-facing — it exists so an LLM in a future session can trace why something was prioritized, suppressed, or classified the way it was.
 
-Four operations write to Session Log:
-- **`/recompute`** — appends full weight table with per-component breakdown and delta from previous values. Includes which Notes sourced urgency spikes.
-- **`/defrag`** — appends per-Map reconciliation traces, per-Note stale checks with thresholds, and per-item defer/complete/misclassification decisions. Replaces the old one-liner count format.
-- **`/pulse`** — appends suppression reasoning: which batches/efforts were suppressed, the weight values and thresholds that triggered suppression, and what was resurfaced.
+Five operations write to Session Log:
+- **`/recompute`** — appends full weight table with per-component breakdown (including Minor Actions and calibration columns) and delta from previous values. Includes which Notes and Minor Actions sourced urgency spikes, and any calibration offsets applied.
+- **`/defrag`** — appends per-Map reconciliation traces, per-Note stale checks with thresholds, per-item defer/complete/misclassification decisions, and Minor Actions cleanup results.
+- **`/pulse`** — appends suppression reasoning, inline recompute results, fuzzy item detection, and priority validation result.
 - **`/triage`** — appends classification decisions with match rationale: which Map purpose matched each Inbox item and why.
+- **Priority Validation** — appends validation outcome (accepted/corrected) with correction details if applicable. Written during `/pulse` step 5.6.
 
 Each entry is `### [Operation] — HH:MM` with structured subsections. Omit empty subsections. Keep individual lines compact (one line per decision) but complete enough that reading the Session Log alone is sufficient to answer "why was X ranked/hidden/classified this way on this date."
 
@@ -87,7 +90,12 @@ When loading an effort for context, read the Map only. Read linked Notes only wh
 `capture → active → waiting → done → archived`
 
 ### Priority Weight Formula
-`priority_weight = f(base_priority, recency_boost, urgency_spike, effort_applied)` normalized to 0.0–1.0
+`priority_weight = f(base_priority, recency_boost, urgency_spike, minor_actions, effort_applied, calibration)` normalized to 0.0–1.0
+
+Minor Actions in Maps feed urgency_spike. Calibration offsets from `Notes/pulse-priority-calibration.md` are applied after raw computation. See SYSTEM.md Section 6 for full formula and calibration mechanism.
+
+### Minor Actions in Maps
+Maps may include an optional `## Minor Actions` section for lightweight tasks with real-world immediacy. Format: `- [ ] Item description (due: YYYY-MM-DD)` or `- [ ] Item description (tonight)`. These feed urgency_spike in the priority formula and are cleaned up during `/defrag`.
 
 ### Capture Flow
 1. Delegate to a background sub-agent (zero context disruption to main conversation)

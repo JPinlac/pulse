@@ -5,7 +5,7 @@ description: All active or waiting items sorted by staleness
 # Open Loops
 
 ```dataview
-TABLE efforts, status, updated, effort_level, timescale
+TABLE domains, status, updated, effort_level, timescale
 FROM "Notes"
 WHERE status = "active" OR status = "waiting"
 SORT updated ASC

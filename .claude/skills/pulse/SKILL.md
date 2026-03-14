@@ -24,7 +24,23 @@ You are the agent interface for a PULSE (Priority-Updated Living System Engine) 
 
 5. **Read today's Daily note** (`Daily/YYYY-MM-DD.md`) if it exists — check what's already been generated or completed.
 
-6. **Present a compact session briefing** (default view):
+5.5. **Check close flag** — read yesterday's Daily Note (`Daily/YYYY-MM-DD.md` for yesterday) frontmatter for `close_complete: true`.
+   - **If true**: skip step 2 (light defrag) and step 6 (inline recompute) — the previous `/close` already ran both. Exception: scan `Inbox/` for new untriaged items; if any found, run only the auto-triage substep from step 2.
+   - **If false or missing**: proceed with steps 2 and 6 as normal (previous session didn't close cleanly or there was no previous session).
+   - Log skip decision to Session Log: `### Startup — HH:MM` with `Close flag: [found|not found], skipped: [defrag+recompute|none], inbox: [N new items triaged]`
+
+6. **Inline recompute** — execute the /recompute formula inline (not as separate skill invocation):
+   - Read all Maps for base_priority, last_active, open_loops
+   - Scan Notes for urgency signals (due dates, stale waiting items)
+   - Scan Minor Actions across all Maps for urgency signals (overdue/same-day: +0.05, within 2 days: +0.03, max +0.15 from Minor Actions)
+   - Calculate recency from Daily notes (last 7 days)
+   - Calculate effort from Note update frequency
+   - Compute raw weights
+   - Read `Notes/pulse-priority-calibration.md` — apply calibration adjustments (pattern-based biases, per-effort offsets from 3+ same-direction corrections)
+   - Update Map frontmatter with fresh weights
+   - Log weight table to Session Log (see /recompute format)
+
+7. **Present a compact session briefing** (default view):
 
 ```
 ## PULSE — [date]
@@ -53,7 +69,29 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 - **Housekeeping** renders as a single italic line (no section header), only if the light defrag did something. Call out stale Maps by name and days.
 - **No shared-context descriptions** — those are already internalized. Each batch is a single line with effort names and loop counts.
 
-7. **Log suppression reasoning** — after generating the briefing (step 6), append a suppression trace to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
+7.5. **Fuzzy item detection** — after computing Focus, flag items where ranking confidence is low:
+   - Two efforts within 0.05 weight of each other in different batches (arbitrary ordering)
+   - High recency (+0.12 or more) on low base (<6) effort (activity volume ≠ importance)
+   - Overdue Minor Actions in low-weight Maps (real urgency in suppressed effort)
+   - Previous calibration correction touched this effort in a similar position
+
+   Render as 1-2 italic lines after Focus:
+   ```
+   _Fuzzy: [effort] (X.XX) — [reason it might be mis-ranked]_
+   ```
+   Omit if no fuzzy items.
+
+7.6. **Validation prompt** (Phase 1 only) — after Focus + Fuzzy, add:
+   ```
+   _Does this Focus ordering match your priorities today?_
+   ```
+   - Silence or continuation = acceptance
+   - If the user corrects the ordering, delegate to a background agent to write a correction entry to `Notes/pulse-priority-calibration.md` with: the mis-ranked effort, full weight breakdown, component at fault, user's reasoning, and correction type (`ordering | suppression-error | missing-item | wrong-urgency`)
+   - Log validation result to Session Log as `### Priority Validation — HH:MM`
+
+   **Phase 2 behavior**: Only show validation prompt when fuzzy items exist. Check PAR and phase criteria in `Notes/pulse-priority-calibration.md` to determine current phase.
+
+8. **Log suppression reasoning** — after generating the briefing (step 7), append a suppression trace to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
 
    Format:
    ```
@@ -72,7 +110,7 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 
    If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
 
-8. **Full view on request** — if the user says "unfold", "full landscape", "show all", or similar at any point in the conversation, present:
+9. **Full view on request** — if the user says "unfold", "full landscape", "show all", or similar at any point in the conversation, present:
 
 ```
 ### Full Landscape
@@ -90,9 +128,9 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 [Only if any Maps have last_active > 7 days. Otherwise omit.]
 ```
 
-9. **Wait for direction.** Do not assume what the user wants to work on. When the user indicates direction, build the day's agenda (step 10).
+10. **Wait for direction.** Do not assume what the user wants to work on. When the user indicates direction, build the day's agenda (step 11).
 
-10. **Build the Daily Note from conversation** — when the user indicates what they want to work on:
+11. **Build the Daily Note from conversation** — when the user indicates what they want to work on:
 
    a. Create `Daily/YYYY-MM-DD.md` if it doesn't exist (use Daily Note template frontmatter).
    b. Pull top items from the Maps the user indicated interest in — these go first, grouped by batch.

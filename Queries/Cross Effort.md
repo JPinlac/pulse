@@ -5,8 +5,8 @@ description: Notes that span multiple efforts
 # Cross Effort
 
 ```dataview
-TABLE efforts, status, updated
+TABLE domains, status, updated
 FROM "Notes"
-WHERE length(efforts) > 1
+WHERE length(domains) > 1
 SORT updated DESC
 ```

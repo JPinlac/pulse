@@ -26,19 +26,20 @@ $ARGUMENTS can specify `light` or `full` (default: `full`).
 
    Compare the sum to `open_loops` in frontmatter. Fix any mismatches.
 3. **Flag obvious issues** — for each Map, determine its effective staleness threshold from the shortest `timescale` among its active Notes (default: weekly → 14 days if no Notes have timescale set). Flag Maps where `last_active` exceeds that threshold.
-4. **Report briefly** — one-line summary for the `/pulse` briefing: "Auto-triaged N items, reconciled M Map counts, K stale Maps flagged."
+4. **Scan Minor Actions** — check each Map's `## Minor Actions` section for overdue unchecked items. Include overdue count in the housekeeping summary.
+5. **Report briefly** — one-line summary for the `/pulse` briefing: "Auto-triaged N items, reconciled M Map counts, K stale Maps flagged, J overdue minor actions."
 
 ### Full Pass (after `/close` or manual)
 
 Run everything in the light pass, plus:
 
-5. **Auto-defer** — find unchecked items from today's Daily note and carry them forward to tomorrow's daily note (if it exists) or note them for next checklist generation.
+6. **Auto-defer** — find unchecked items from today's Daily note and carry them forward to tomorrow's daily note (if it exists) or note them for next checklist generation.
 
-6. **Auto-mark done** — find items checked off in the Daily note (lines matching `- [x]`) and set their source Notes to `status: done` with `updated` set to today.
+7. **Auto-mark done** — find items checked off in the Daily note (lines matching `- [x]`) and set their source Notes to `status: done` with `updated` set to today.
 
-7. **Catch misclassifications** — for each Note triaged today (or recently), read the content body and compare against the assigned `efforts[]`. If the content clearly doesn't match the effort's Map purpose, flag it: "Possible misclassification: [note title] assigned to [effort] — content seems more like [suggested effort]."
+8. **Catch misclassifications** — for each Note triaged today (or recently), read the content body and compare against the assigned `efforts[]`. If the content clearly doesn't match the effort's Map purpose, flag it: "Possible misclassification: [note title] assigned to [effort] — content seems more like [suggested effort]."
 
-8. **Flag stale items** — active Notes where `(today - updated)` exceeds the stale threshold for that Note's `timescale`. Thresholds (at ~150% of natural period):
+9. **Flag stale items** — active Notes where `(today - updated)` exceeds the stale threshold for that Note's `timescale`. Thresholds (at ~150% of natural period):
 
    | timescale | stale after |
    |-----------|-------------|
@@ -54,9 +55,15 @@ Run everything in the light pass, plus:
 
 9. **Merge candidates** — Notes in the same effort with overlapping titles or content. Present as: "Possible merge: [note A] and [note B] in [effort]."
 
-10. **Update timestamps** — set `last_active` on any Maps that were touched during this session. Set `updated` on any Notes that were modified.
+10. **Minor Actions cleanup** — for each Map's `## Minor Actions` section:
+    - Remove checked (`[x]`) items older than 3 days
+    - Flag unchecked items with no date that have been sitting for 7+ days (based on git history or session context)
+    - Flag overdue unchecked items in the report
+    - Items that have grown in scope during the session should be promoted to Notes (create Note, add to Active Threads, remove from Minor Actions)
 
-11. **Report what was done**:
+11. **Update timestamps** — set `last_active` on any Maps that were touched during this session. Set `updated` on any Notes that were modified.
+
+12. **Report what was done**:
 
 ```
 ## Defrag Summary
@@ -65,13 +72,14 @@ Run everything in the light pass, plus:
 - Auto-deferred: N items to tomorrow
 - Auto-completed: N items marked done
 - Map counts reconciled: N corrections
+- Minor Actions: N cleaned, N overdue flagged
 - Flagged for review:
   - N possible misclassifications
   - N stale items (past their timescale window)
   - N merge candidates
 ```
 
-12. **Log to Daily Note** — append a timestamped decision trace under `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
+13. **Log to Daily Note** — append a timestamped decision trace under `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
 
    Format:
    ```
@@ -88,8 +96,9 @@ Run everything in the light pass, plus:
    **Completed**: [item-slug] (status → done)
    **Misclassifications**: [note-slug] assigned [effort], content suggests [effort]
    **Merge candidates**: [note-a] + [note-b] in [effort]
+   **Minor Actions**: cleaned N checked items, flagged N overdue, promoted N to Notes
 
-   Summary: triaged N, deferred N, reconciled N, flagged N stale, N merge candidates
+   Summary: triaged N, deferred N, reconciled N, flagged N stale, N merge candidates, N minor actions cleaned
    ```
 
    Omit any section that has zero items (e.g., skip **Merge candidates** if none found). The summary line at the end is still compact for scanning, but the per-item traces above it make each decision traceable.
