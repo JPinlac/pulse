@@ -455,13 +455,13 @@ efforts: [<slug>, ...]          # Filled during triage
 4. Read Home.md
 5. Read all Map frontmatter (priority_weight, open_loops, last_active)
 6. Read today's Daily note if it exists
-7. Present compact briefing: top-5 items by importance, housekeeping (inline), active batches with loop counts
-   — Focus is item-driven: sort open items by importance, then due date, then effort weight
-   — Importance override: high-importance items pierce suppression and always appear in Focus
+7. Present compact briefing: Important Items (all high-importance + medium-due items), housekeeping (inline), active batches with loop counts
+   — Important Items is item-driven: sort open items by importance, then effort weight, then due date proximity
+   — Importance override: high-importance items pierce suppression and always appear in Important Items
    — Apply batch gating + effort-level suppression (omit efforts with 0 loops + stale + no deadlines)
    — Suppressed batches/efforts collapse to a single fold-line ("say unfold for full landscape")
-7.5. Fuzzy item detection: flag low-confidence rankings after Focus
-7.6. Validation prompt: "Does this Focus ordering match your priorities today?" (Phase 1: always; Phase 2: only with fuzzy items)
+7.5. Fuzzy item detection: flag low-confidence rankings after Important Items
+7.6. Validation prompt: "Does this ordering match your priorities today?" (Phase 1: always; Phase 2: only with fuzzy items)
 8. Log suppression reasoning to ## Session Log in Daily Note
 9. Full view on request: all batches, all efforts, top threads, stale Maps
 10. Wait for direction

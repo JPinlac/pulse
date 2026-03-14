@@ -45,12 +45,13 @@ You are the agent interface for a PULSE (Priority-Updated Living System Engine) 
 ```
 ## PULSE — [date]
 
-### Focus
-1. [item description] ([effort]) — importance: high, due: [date or n/a]
-2. [item description] ([effort]) — importance: high
-3. [item description] ([effort]) — importance: high, due: [date]
-4. [item description] ([effort]) — importance: medium, due: tomorrow
-5. [item description] ([effort]) — importance: medium
+### Important Items
+- [item description] ([effort]) — importance: high, due: [date or n/a]
+- [item description] ([effort]) — importance: high
+- [item description] ([effort]) — importance: high, due: [date]
+- [item description] ([effort]) — importance: medium, due: tomorrow
+- [item description] ([effort]) — importance: medium
+[...all genuinely important items — no artificial cap]
 
 _Housekeeping: [summary]. [Effort] Map stale ([N] days)._
 _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
@@ -59,42 +60,43 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 **[Batch]** [combined weight] — [effort] ([N] loops)
 > [N] efforts across [N] batches below the fold. Say **unfold** for full landscape.
 
-### What would you like to focus on?
+### What would you like to work on?
 ```
 
-#### Focus selection logic
+#### Important Items selection logic
 
-Focus is **item-driven, not effort-driven**. It surfaces the most important open items across all efforts:
+Important Items is **item-driven, not effort-driven**. It surfaces all genuinely important open items across all efforts — no artificial cap:
 1. Collect all open items (active/waiting Notes + unchecked Minor Actions) across all Maps
-2. Sort by: importance (`high` > `medium` > `low`), then due date proximity (sooner first, no-date last), then effort `priority_weight` as tiebreaker
-3. Show top 5 items with effort attribution
-4. A `high` importance item in a suppressed batch WILL appear in Focus — importance pierces through suppression
+2. Sort by: importance (`high` > `medium` > `low`), then effort `priority_weight` as tiebreaker (high base priority + real-world urgency over recency/loop count), then due date proximity (sooner first, no-date last)
+3. Show all `high` importance items, plus `medium` items with due dates within 7 days or overdue. Omit `low` items and `medium` items with no near-term pressure.
+4. A `high` importance item in a suppressed batch WILL appear in Important Items — importance pierces through suppression
+5. The user invokes `/focus` separately if they want to narrow down to a single effort. Important Items is informational — the user just starts working.
 
 #### Compact view rendering rules
 
 - **Batch gating** — suppress a batch when ALL of: combined weight < 40% of top batch, no `due` dates within 7 days, no `status: waiting` items older than 3 days.
 - **Effort-level suppression** — within shown batches, omit efforts where `open_loops == 0 AND last_active > 7 days AND no due within 7 days`. Exception: if any Note in that effort has crossed its timescale "surface at" threshold, do NOT suppress — it's due for attention. If all efforts in a batch would be omitted, suppress the entire batch.
-- **Importance override** — efforts with any `importance: high` items (Notes or Minor Actions) are exempt from effort-level suppression. Batch gating still applies to batch-line display, but Focus items already pierce through it.
-- **Resurfacing** — after Focus and Housekeeping, list any Notes where `(today - updated)` exceeds the "surface at" threshold for their `timescale`. This is an informational nudge, not a priority override. Thresholds: daily→1d, weekly→6d, monthly→25d, quarterly→75d, biannual→150d, annual→300d. Notes with `timescale: null` use 6 days. Omit the line entirely if nothing is resurfacing.
+- **Importance override** — efforts with any `importance: high` items (Notes or Minor Actions) are exempt from effort-level suppression. Batch gating still applies to batch-line display, but Important Items already pierce through it.
+- **Resurfacing** — after Important Items and Housekeeping, list any Notes where `(today - updated)` exceeds the "surface at" threshold for their `timescale`. This is an informational nudge, not a priority override. Thresholds: daily→1d, weekly→6d, monthly→25d, quarterly→75d, biannual→150d, annual→300d. Notes with `timescale: null` use 6 days. Omit the line entirely if nothing is resurfacing.
 - **Suppressed batches** collapse into the fold-line count. If no batches are suppressed, omit the fold-line entirely.
 - **Housekeeping** renders as a single italic line (no section header), only if the light defrag did something. Call out stale Maps by name and days.
 - **No shared-context descriptions** — those are already internalized. Each batch is a single line with effort names and loop counts.
 
-7.5. **Fuzzy item detection** — after computing Focus, flag items where ranking confidence is low:
+7.5. **Fuzzy item detection** — after computing Important Items, flag items where ranking confidence is low:
    - Two efforts within 0.05 weight of each other in different batches (arbitrary ordering)
    - High recency (+0.12 or more) on low base (<6) effort (activity volume ≠ importance)
    - Overdue Minor Actions in low-weight Maps (real urgency in suppressed effort)
    - Previous calibration correction touched this effort in a similar position
 
-   Render as 1-2 italic lines after Focus:
+   Render as 1-2 italic lines after Important Items:
    ```
    _Fuzzy: [effort] (X.XX) — [reason it might be mis-ranked]_
    ```
    Omit if no fuzzy items.
 
-7.6. **Validation prompt** (Phase 1 only) — after Focus + Fuzzy, add:
+7.6. **Validation prompt** (Phase 1 only) — after Important Items + Fuzzy, add:
    ```
-   _Does this Focus ordering match your priorities today?_
+   _Does this ordering match your priorities today?_
    ```
    - Silence or continuation = acceptance
    - If the user corrects the ordering, delegate to a background agent to write a correction entry to `Notes/pulse-priority-calibration.md` with: the mis-ranked effort, full weight breakdown, component at fault, user's reasoning, and correction type (`ordering | suppression-error | missing-item | wrong-urgency`)
@@ -108,7 +110,7 @@ Focus is **item-driven, not effort-driven**. It surfaces the most important open
    ```
    ### Pulse Briefing — HH:MM
 
-   **Focus items**: [item] ([effort], importance: high), [item] ([effort], importance: medium), ...
+   **Important Items**: [item] ([effort], importance: high), [item] ([effort], importance: medium), ...
    **Suppressed batches**:
    - [Batch]: combined weight X.XX < 40% of top (X.XX), no due dates, no stale waiting
    **Suppressed efforts** (within shown batches):
