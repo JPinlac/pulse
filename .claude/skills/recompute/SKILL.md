@@ -1,6 +1,6 @@
 ---
 name: recompute
-description: Recalculate priority weights across all Maps based on base_priority, recency, urgency, and effort. Use to refresh the priority landscape after a period of activity.
+description: Recalculate priority weights across all Maps based on base_priority, recency, urgency, and importance-weighted open loops. Use to refresh the priority landscape after a period of activity.
 user-invocable: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
@@ -17,11 +17,13 @@ For each Map, compute:
 base_score = base_priority / 10                    # normalize to 0-1
 recency_boost = (interactions_last_7_days) × 0.03  # +0.03 per touch, max +0.15
 urgency_spike = 0.0-0.2                            # from due dates or blockers in linked notes
-effort_factor = 0.0-0.1                            # momentum from recent sustained work
+loop_factor = min(sum(per_item_weight), 0.10)       # importance-weighted open items
 
-raw_weight = base_score + recency_boost + urgency_spike + effort_factor
+raw_weight = base_score + recency_boost + urgency_spike + loop_factor
 priority_weight = min(raw_weight, 1.0)              # cap at 1.0
 ```
+
+Per-item weights for loop_factor: `high: 0.04`, `medium: 0.02`, `low: 0.01`. Default importance is `medium` when unspecified.
 
 ### Steps
 
@@ -42,9 +44,11 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
    - Count how many of the last 7 daily notes touched each effort (via `efforts_touched`)
    - Each touch = +0.03, capped at +0.15
 
-5. **Calculate effort** from recent note activity:
-   - Count notes in each effort updated in the last 7 days
-   - Sustained work (3+ notes updated) = +0.05 to +0.10
+5. **Calculate loop_factor** from importance-weighted open items:
+   - For each effort, collect open items: active/waiting Notes + unchecked Minor Actions
+   - Read `importance` from each item (Note frontmatter or Minor Action inline property). Default: `medium`
+   - Sum per-item weights: `high: 0.04`, `medium: 0.02`, `low: 0.01`
+   - Cap at 0.10
 
 6. **Compute raw weights** for each Map.
 
@@ -62,7 +66,7 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
 ```
 ## Priority Weights — [date]
 
-| Effort | Base | Recency | Urgency | Minor | Effort | Calibration | Weight |
+| Effort | Base | Recency | Urgency | Minor | Loops | Calibration | Weight |
 |--------|------|---------|---------|-------|--------|-------------|--------|
 | [name] | X.XX | +X.XX   | +X.XX   | +X.XX | +X.XX  | +/-X.XX     | X.XX   |
 ...
@@ -78,7 +82,7 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
    ```
    ### Recompute — HH:MM
 
-   | Effort | Base | Recency | Urgency | Minor | Effort | Cal | Weight | Δ |
+   | Effort | Base | Recency | Urgency | Minor | Loops | Cal | Weight | Δ |
    |--------|------|---------|---------|-------|--------|-----|--------|---|
    | [name] | X.XX | +X.XX   | +X.XX   | +X.XX | +X.XX  | +/-X.XX | X.XX | ↑/↓/= X.XX |
    ...
@@ -92,7 +96,7 @@ priority_weight = min(raw_weight, 1.0)              # cap at 1.0
 
 ### Implicit Invocation
 
-The /recompute formula now runs inline during `/pulse` (step 3.5) and `/close` (step 6.5). When invoked inline, skip the presentation step (step 10) and the Home.md update (step 9) — those are handled by the calling skill. The Session Log entry is always written regardless of invocation mode.
+The /recompute formula now runs inline during `/pulse` (step 6) and `/close` (step 6.5). When invoked inline, skip the presentation step (step 10) and the Home.md update (step 9) — those are handled by the calling skill. The Session Log entry is always written regardless of invocation mode.
 
 ### Principles
 - Weights reflect reality, not aspiration

@@ -66,7 +66,7 @@ Five operations write to Session Log:
 - **`/defrag`** — appends per-Map reconciliation traces, per-Note stale checks with thresholds, per-item defer/complete/misclassification decisions, and Minor Actions cleanup results.
 - **`/pulse`** — appends suppression reasoning, inline recompute results, fuzzy item detection, and priority validation result.
 - **`/triage`** — appends classification decisions with match rationale: which Map purpose matched each Inbox item and why.
-- **Priority Validation** — appends validation outcome (accepted/corrected) with correction details if applicable. Written during `/pulse` step 5.6.
+- **Priority Validation** — appends validation outcome (accepted/corrected) with correction details if applicable. Written during `/pulse` step 7.6.
 
 Each entry is `### [Operation] — HH:MM` with structured subsections. Omit empty subsections. Keep individual lines compact (one line per decision) but complete enough that reading the Session Log alone is sufficient to answer "why was X ranked/hidden/classified this way on this date."
 
@@ -77,7 +77,7 @@ The user never manually writes metadata. Agent writes/updates all YAML frontmatt
 Maps are indices, not containers. When a Note exists for a thread:
 - Map entry = `[[note-slug]] — [≤15-word summary] (subtype, date)`
 - Never inline note content or extended summaries into Maps
-- Bare action items (no Note) remain as plain text in Active Threads
+- Bare action items (no Note) should be promoted to Minor Actions during `/defrag` (with `importance: medium` default)
 When loading an effort for context, read the Map only. Read linked Notes only when actively working on that thread.
 
 ### Note Types
@@ -90,12 +90,12 @@ When loading an effort for context, read the Map only. Read linked Notes only wh
 `capture → active → waiting → done → archived`
 
 ### Priority Weight Formula
-`priority_weight = f(base_priority, recency_boost, urgency_spike, minor_actions, effort_applied, calibration)` normalized to 0.0–1.0
+`priority_weight = f(base_priority, recency_boost, urgency_spike, loop_factor, calibration)` normalized to 0.0–1.0
 
-Minor Actions in Maps feed urgency_spike. Calibration offsets from `Notes/pulse-priority-calibration.md` are applied after raw computation. See SYSTEM.md Section 6 for full formula and calibration mechanism.
+`loop_factor` aggregates importance-weighted open items (Notes + Minor Actions): `high: +0.04`, `medium: +0.02`, `low: +0.01` per item, capped at +0.10. Minor Actions due dates also feed `urgency_spike`. Calibration offsets from `Notes/pulse-priority-calibration.md` are applied after raw computation. See SYSTEM.md Section 6 for full formula and calibration mechanism.
 
 ### Minor Actions in Maps
-Maps may include an optional `## Minor Actions` section for lightweight tasks with real-world immediacy. Format: `- [ ] Item description (due: YYYY-MM-DD)` or `- [ ] Item description (tonight)`. These feed urgency_spike in the priority formula and are cleaned up during `/defrag`.
+Maps may include an optional `## Minor Actions` section for lightweight tasks with real-world immediacy. Format: `- [ ] Item description (due: YYYY-MM-DD, importance: high)` or `- [ ] Item description (tonight, importance: low)`. Items have `importance: low|medium|high` (default: medium). Due dates feed `urgency_spike`; importance feeds `loop_factor`. Minor Actions count toward `open_loops`. Cleaned up during `/defrag`.
 
 ### Capture Flow
 1. Delegate to a background sub-agent (zero context disruption to main conversation)
