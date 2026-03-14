@@ -232,9 +232,9 @@ Priority is **computed**, not assigned. No manual priority fields to maintain. T
 base_score     = base_priority / 10                         # 0.0–1.0
 recency_boost  = min(interactions_last_7_days × 0.03, 0.15) # 0.0–0.15
 urgency_spike  = deadline_proximity + blocker_pressure       # 0.0–0.20
-effort_factor  = sustained_work_momentum                     # 0.0–0.10
+loop_factor    = min(sum(per_item_weight), 0.10)             # 0.0–0.10
 
-priority_weight = min(base_score + recency_boost + urgency_spike + effort_factor, 1.0)
+priority_weight = min(base_score + recency_boost + urgency_spike + loop_factor, 1.0)
 ```
 
 ### Components Explained
@@ -250,11 +250,11 @@ priority_weight = min(base_score + recency_boost + urgency_spike + effort_factor
 - Explicit user declaration ("side-project has a critical bug"): up to +0.20
 - Spikes decay naturally as deadlines pass or blockers resolve.
 
-**effort_factor** — Sustained recent work:
-- 1-2 notes updated in last 7 days: +0.03
-- 3-4 notes: +0.07
-- 5+ notes: +0.10
-- This captures momentum. An effort you've been pouring work into stays elevated.
+**loop_factor** — Weighted open-item load. Each open item (active/waiting Note or unchecked Minor Action) contributes based on its `importance`:
+- `high`: +0.04 per item
+- `medium`: +0.02 per item (default when unspecified)
+- `low`: +0.01 per item
+- Capped at +0.10 total. This captures outstanding commitment load — efforts with more important open work get elevated.
 
 ### Minor Actions Urgency
 
@@ -267,12 +267,12 @@ Maps can have an optional `## Minor Actions` section — lightweight checklist i
 Format in Maps:
 ```markdown
 ## Minor Actions
-- [ ] Quick task (tonight)
-- [ ] Prep for appointment (due: 2026-03-15)
-- [ ] Pick up supplies (due: 2026-03-13)
+- [ ] Quick task (tonight, importance: low)
+- [ ] Prep for appointment (due: 2026-03-15, importance: high)
+- [ ] Pick up supplies (due: 2026-03-13, importance: medium)
 ```
 
-Rules: items have optional inline `(due: YYYY-MM-DD)` or informal immediacy. Completed items get checked `[x]` and cleaned up during `/defrag`. Items that grow in scope get promoted to Notes.
+Rules: items have optional inline `(due: YYYY-MM-DD)` or informal immediacy, plus `importance: low|medium|high` (default: medium if omitted). Importance feeds the `loop_factor` formula component. Completed items get checked `[x]` and cleaned up during `/defrag`. Items that grow in scope get promoted to Notes.
 
 ### Calibration Mechanism
 
@@ -362,6 +362,7 @@ updated: <YYYY-MM-DD>
 effort_level: <trivial|small|medium|large|null>  # Mental absorption required
 timescale: <daily|weekly|monthly|quarterly|biannual|annual|null>  # Natural periodicity
 due: <YYYY-MM-DD|null>         # Optional deadline
+importance: <low|medium|high>  # Feeds loop_factor. Default: medium
 context_group: <batch-name|null>
 tags: [<tag>, ...]
 ---
@@ -454,7 +455,9 @@ efforts: [<slug>, ...]          # Filled during triage
 4. Read Home.md
 5. Read all Map frontmatter (priority_weight, open_loops, last_active)
 6. Read today's Daily note if it exists
-7. Present compact briefing: top priorities, housekeeping (inline), active batches with loop counts
+7. Present compact briefing: top-5 items by importance, housekeeping (inline), active batches with loop counts
+   — Focus is item-driven: sort open items by importance, then due date, then effort weight
+   — Importance override: high-importance items pierce suppression and always appear in Focus
    — Apply batch gating + effort-level suppression (omit efforts with 0 loops + stale + no deadlines)
    — Suppressed batches/efforts collapse to a single fold-line ("say unfold for full landscape")
 7.5. Fuzzy item detection: flag low-confidence rankings after Focus
@@ -506,7 +509,7 @@ efforts: [<slug>, ...]          # Filled during triage
 1. Find all Inbox items where triaged: false
 2. For each: match content against Maps, assign efforts/status — no confirmation
 3. Execute immediately:
-   a. Create Note in Notes/ (or append to existing)
+   a. Create Note in Notes/ (or append to existing); include importance field
    b. Update relevant Map(s): add link, increment open_loops, update last_active
    c. Mark Inbox item triaged: true
 4. Report summary: "Auto-triaged N items: [title] → [effort], ..."
@@ -543,7 +546,7 @@ efforts: [<slug>, ...]          # Filled during triage
 ```
 Light pass (during /pulse):
 1. Auto-triage pending Inbox items
-2. Reconcile Map open_loops counts against actual Notes
+2. Reconcile Map open_loops counts against actual Notes + unchecked Minor Actions
 3. Flag stale Maps (last_active exceeds threshold)
 4. Scan Minor Actions for overdue items
 5. Report briefly — one-line summary for the pulse briefing
@@ -555,6 +558,7 @@ All of the above, plus:
 8. Catch misclassifications from auto-triage (flag, don't auto-fix)
 9. Flag stale items (active Notes past their timescale window — see threshold table in defrag skill)
 10. Identify merge candidates (overlapping Notes in same effort)
+10.5. Promote plain-text bullets in Active Threads → Minor Actions (importance: medium)
 11. Minor Actions cleanup (remove old checked items, flag overdue, promote scope-grown items)
 12. Update all timestamps (last_active on Maps, updated on Notes)
 13. Report structured summary of everything done and flagged
@@ -568,11 +572,11 @@ All of the above, plus:
 2. Scan Notes for urgency signals (due dates, stale waiting items)
 3. Scan Minor Actions across all Maps for urgency signals
 4. Calculate recency from Daily notes (last 7 days)
-5. Calculate effort from Note update frequency
+5. Calculate loop_factor from importance-weighted open items (Notes + Minor Actions)
 6. Compute raw weights
 7. Apply calibration adjustments from Notes/pulse-priority-calibration.md
 8. Update Map frontmatter, update Home.md Current Focus section
-9. Present table with full breakdown (including Minor Actions + calibration columns) and change deltas
+9. Present table with full breakdown (including Minor Actions + loops + calibration columns) and change deltas
 10. Log weight snapshot with deltas and urgency sources to ## Session Log in Daily Note
 ```
 
@@ -659,6 +663,7 @@ Rationale for non-obvious choices, preserved for future reference.
 | Session Log — decision trace layer | Replaced one-liner defrag log with per-decision traces. Added persistent logging to /recompute (weight snapshots with deltas and urgency sources), /defrag (per-Map reconciliation, per-Note stale checks), /pulse (suppression reasoning for batches and efforts), and /triage (classification decisions with match rationale). All append to ## Session Log in Daily Note. Purely a debugging layer for tracing priority misses and suppression errors across sessions. |
 | Single calibration Note (not distributed across Daily Notes) | Agent reads one file for full correction history. Distributed corrections across Daily Notes would require scanning 14+ files at every /pulse. Single file = O(1) lookup. |
 | Minor Actions as first-class urgency signals | Real deadlines don't always have frontmatter. Bare-text items in Maps were invisible to the formula — items with genuine urgency but zero formula weight. Minor Actions section gives incidentals a scannable home without Note overhead. |
+| Replace effort_factor with importance-weighted loop_factor | `effort_factor` (note update frequency) overlapped with `recency_boost` — both measured 7-day activity. Replaced with `loop_factor`: per-item importance weighting (high +0.04, medium +0.02, low +0.01, cap 0.10). Added `importance: low\|medium\|high` to Notes frontmatter and Minor Actions inline format. Minor Actions now count toward `open_loops`. Plain-text bullets promoted to Minor Actions during defrag. `/pulse` Focus reworked to be item-driven (top 5 by importance across all efforts) instead of effort-driven, with importance override for suppression. |
 
 ---
 
@@ -679,3 +684,4 @@ Record significant changes to the system here. Date, what changed, why.
 | 2026-03-12 | Session Log — decision trace layer for debugging | Replaced one-liner defrag log with per-decision traces. Added persistent logging to /recompute, /defrag, /pulse, and /triage. All append to ## Session Log in Daily Note. |
 | 2026-03-14 | Priority feedback loop & trust calibration | Added calibration log (`Notes/pulse-priority-calibration.md`), Minor Actions sections in Maps, fuzzy item detection, validation prompt in /pulse, session-end recompute in /close, Minor Actions cleanup in /defrag. Introduced PAR metric and Phase 1→2 trust transition criteria. |
 | 2026-03-14 | close_complete flag — skip redundant /pulse startup | `/close` sets `close_complete: true` in Daily Note frontmatter after successful defrag+recompute. Next `/pulse` reads yesterday's flag to skip light defrag and inline recompute, trusting cached weights. Inbox scan still runs for overnight captures. Reduces morning startup latency with no accuracy loss. |
+| 2026-03-14 | Replace effort_factor with importance-weighted loop_factor | `effort_factor` (note update frequency) overlapped with `recency_boost` — both measured 7-day activity. Replaced with `loop_factor`: per-item importance weighting (high +0.04, medium +0.02, low +0.01, cap 0.10). Added `importance` field to Notes and Minor Actions. Minor Actions now count toward `open_loops`. Plain-text bullets promoted to Minor Actions during defrag. `/pulse` Focus reworked to item-driven (top 5 by importance across all efforts), with importance override for suppression. |

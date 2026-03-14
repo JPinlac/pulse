@@ -20,7 +20,7 @@ Process untriaged items from `Inbox/` into the PULSE system. Execute immediately
    a. **Match against Maps** — read the content and compare against Map purposes and active threads to determine the best `efforts[]` assignment, `status`, and `context_group`.
 
    b. **Create or append**:
-      - If the content is a new thread: create a Note in `Notes/` with proper frontmatter (type, subtype, efforts, status, dates, effort_level, timescale, context_group, tags). Filename: `Notes/[descriptive-slug].md`
+      - If the content is a new thread: create a Note in `Notes/` with proper frontmatter (type, subtype, efforts, status, dates, effort_level, timescale, importance, context_group, tags). Assess content to assign `importance: low|medium|high` based on the item's significance and immediacy. Filename: `Notes/[descriptive-slug].md`
       - If the content clearly extends an existing Note: read the target note, append content, update `updated` date.
 
    c. **Update relevant Maps (compressed pointer)**:
