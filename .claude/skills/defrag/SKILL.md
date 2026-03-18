@@ -65,6 +65,8 @@ Run everything in the light pass, plus:
 
 11. **Update timestamps** — set `last_active` on any Maps that were touched during this session. Set `updated` on any Notes that were modified.
 
+11.5. **Update `Maps/INDEX.md`** — write-behind for any Maps whose `open_loops` or `last_active` changed during this pass. Refresh `High Items` and `Next Due` columns for affected efforts (re-scan their Minor Actions). Update frontmatter `updated: YYYY-MM-DD`. Keep rows ordered by `priority_weight` descending.
+
 12. **Report what was done**:
 
 ```
@@ -82,7 +84,7 @@ Run everything in the light pass, plus:
   - N merge candidates
 ```
 
-13. **Log to Daily Note** — append a timestamped decision trace under `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist.
+13. **Log to session log file** — append a timestamped decision trace to `Daily/logs/YYYY-MM-DD-log.md`. Create the file and directory if they don't exist. Do NOT write to the Daily note itself.
 
    Format:
    ```
@@ -109,7 +111,7 @@ Run everything in the light pass, plus:
 
    Light pass uses the same format but only includes sections relevant to the light pass (Triage, Reconciled Maps, Stale checks).
 
-   If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
+   If no Daily Note exists yet, create one with minimal frontmatter (no Session Log section — that goes in `Daily/logs/`).
 
 ### Principles
 

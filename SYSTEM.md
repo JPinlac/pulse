@@ -89,7 +89,7 @@ The user never writes frontmatter. Every `---` block is created and maintained b
 │   └── .keep
 │
 ├── Daily/                   Session agenda + effort log. YYYY-MM-DD.md.
-│   └── .keep
+│   └── logs/                Session Log decision traces. YYYY-MM-DD-log.md.
 │
 ├── Templates/               Obsidian templates.
 │   ├── Daily Note.md
@@ -161,28 +161,34 @@ Use `/efforts` for all effort lifecycle operations — add, splinter, merge, rev
 
 ### Principle
 
-Context switching has two distinct costs, and the system must account for both:
+Context switching has two dimensions, and the system must account for both:
 
-1. **Domain switching (primary)** — reloading a different problem domain: codebase, stakeholder relationships, terminology, toolchain. This is the dominant cost. Switching between two coding efforts in unrelated domains (work codebase vs. personal website) incurs a massive context reload even though both are "analytical."
+1. **Problem Domain** (primary cost) — Which mental models, codebases, stakeholder relationships, and terminology you need loaded. Switching problem domains forces a full context reload.
+2. **Cognitive Mode** (secondary cost) — What energy state and thinking style you're in: analytical, creative, reflective. Mode shifts are lighter but still real.
 
-2. **Mode switching (secondary)** — shifting cognitive energy state: from analytical execution to creative exploration, or from focused building to reflective review. This is real but cheaper than domain switching.
+Problem domain switching is typically far more expensive than mode switching. Two coding tasks in unrelated codebases cost more to alternate between than switching from coding to writing within the same project. The batch system groups efforts that share concrete context — tools, environments, knowledge — so the expensive reloads happen as few times per day as possible.
+
+### Batch Assessment
 
 If switching between two efforts requires reloading a different mental model (codebase, stakeholder relationships, terminology), they belong in separate batches — even if they use the same skills.
 
-### Defining Batches
+### Batch Definition
 
-Context batch definitions live in `CLAUDE.md` as agent guidance. Each effort's batch assignment is stored in its Map's `context_batch` frontmatter field. Each batch has two axes:
+Each batch has two fields:
+- **shared_context** (list) — Concrete elements shared across efforts: tools, codebases, environments, knowledge domains, stakeholder worlds
+- **mindset** (string) — The cognitive mode or energy state while working
 
-- **shared_context** — concrete elements shared across efforts in the batch: tools, codebases, environments, knowledge domains, stakeholder worlds. This is the primary grouping axis.
-- **mindset** — the cognitive mode/energy state. This is the secondary axis.
+Batch metadata lives in `CLAUDE.md` as an inline table. Each effort's batch assignment is in its Map frontmatter (`context_batch` field).
 
-Example:
+### Batches
 
-| Batch | Shared Context | Mindset | Efforts |
-|-------|----------------|---------|---------|
-| **Work** | IDE/terminal, engineering models, team stakeholders | Analytical, execution-focused | my-job, freelance |
-| **Projects** | Personal codebases, creative tooling | Creative, exploratory | side-project, open-source |
-| **Personal** | Physical environment, bodily awareness | Reflective, embodied | health, learning |
+Batch definitions — shared context and mindset — live in `CLAUDE.md`. Example batches:
+
+| Batch | Efforts |
+|-------|---------|
+| **Work** | my-job, freelance |
+| **Personal Projects** | side-project, blog |
+| **Home** | family, home |
 
 ### Batch Ordering
 
@@ -190,22 +196,19 @@ When generating daily checklists, batches are ordered by **combined priority wei
 
 ### Batch Gating (Soft Suppression)
 
-Not every batch is worth a context switch on a given day. After ordering batches by combined weight, the checklist and pulse briefing soft-suppress low-value batches — visible but de-emphasized.
+When a batch's combined weight is low relative to the day's top batch and has no urgent items, the checklist and pulse briefing soft-suppress it — visible but de-emphasized. In checklists, this is a single collapsed line. In pulse, suppressed batches collapse into a fold-line count (e.g., "3 efforts across 2 batches below the fold").
 
 A batch is soft-suppressed when **all** of the following are true:
-- Combined weight is below **40%** of the top batch's combined weight
+- Combined weight is below 40% of the top batch's combined weight
 - No items with `due` dates within 7 days
 - No `status: waiting` items older than 3 days
 
-In checklists, suppressed batches render as a single collapsed line:
-
+Suppressed batches render as:
 ```
 > ~[Batch Name] [weight: X.XX] — N items, nothing urgent
 ```
 
-In pulse, suppressed batches collapse into a fold-line count (e.g., "3 efforts across 2 batches below the fold"). Say "unfold" for the full landscape.
-
-This keeps them visible (you can always expand/pivot) without prompting action on batches that aren't worth the switching cost today.
+Full batches render normally with checklist items.
 
 ### Inspiration Override
 
@@ -308,8 +311,8 @@ Phase 2 changes: validation prompt only shown when fuzzy items exist, batch gati
 ### Recomputation
 
 Weights are recalculated:
-- At the start of each session (via `/pulse`, inline recompute step)
-- At session close (via `/close`, inline recompute step)
+- At the start of each session (via `/pulse`, inline recompute step 4.5)
+- At session close (via `/close`, inline recompute step 6.5)
 - On demand (via `/recompute`)
 - After significant vault changes (triage, review)
 
@@ -338,12 +341,12 @@ effort: <slug>                  # Canonical effort identifier
 context_batch: <batch-name>     # Context batch for grouping
 priority_weight: <0.0-1.0>     # Computed. Never manually set.
 base_priority: <1-10>          # Life-importance anchor. Rarely changes.
-purpose: <string>              # One-line description of why this effort matters
-aliases: [<alias>, ...]        # Optional flexible-match terms for /focus resolution
 last_active: <YYYY-MM-DD>      # Last date this effort was touched
 open_loops: <int>              # Count of active/waiting items linked to this Map
 related_efforts:               # Cross-effort connections
   - <slug>
+purpose: <string>              # One-line why this effort matters
+aliases: [<alias>, ...]       # Flexible-match terms for this effort
 tags: [<tag>, ...]
 ---
 ```
@@ -445,27 +448,23 @@ efforts: [<slug>, ...]          # Filled during triage
 ### Session Start (`/pulse`)
 
 ```
-1. If Maps/ has no .md files, bootstrap by creating default Maps (see Bootstrap section)
-2. Light defrag: auto-triage pending Inbox items, reconcile Map counts, flag stale Maps, scan Minor Actions for overdue
-2.5. Check close flag: read yesterday's Daily Note for close_complete: true
-     — If true: skip steps 2+3 (trust cached weights), only scan Inbox for new items
+1. Read Home.md
+2. Read all Map frontmatter (priority_weight, open_loops, last_active)
+3. Read today's Daily note if it exists
+3.5. Check close flag: read yesterday's Daily Note for close_complete: true
+     — If true: skip steps 4+4.5 (trust cached weights), only scan Inbox for new items
      — If false/missing: proceed normally
      — Log skip decision to Session Log
-3. Inline recompute: compute fresh weights (including Minor Actions urgency + calibration adjustments)
-4. Read Home.md
-5. Read all Map frontmatter (priority_weight, open_loops, last_active)
-6. Read today's Daily note if it exists
-7. Present compact briefing: Important Items (all high-importance + medium-due items), housekeeping (inline), active batches with loop counts
-   — Important Items is item-driven: sort open items by importance, then effort weight, then due date proximity
-   — Importance override: high-importance items pierce suppression and always appear in Important Items
+4. Light defrag: auto-triage Inbox, reconcile Map counts, flag stale Maps, scan Minor Actions for overdue
+4.5. Inline recompute: compute fresh weights (including Minor Actions urgency + calibration adjustments)
+5. Present compact briefing: top priorities, housekeeping (inline), active batches with loop counts
    — Apply batch gating + effort-level suppression (omit efforts with 0 loops + stale + no deadlines)
    — Suppressed batches/efforts collapse to a single fold-line ("say unfold for full landscape")
-7.5. Fuzzy item detection: flag low-confidence rankings after Important Items
-7.6. Validation prompt: "Does this ordering match your priorities today?" (Phase 1: always; Phase 2: only with fuzzy items)
-8. Log suppression reasoning to ## Session Log in Daily Note
-9. Full view on request: all batches, all efforts, top threads, stale Maps
-10. Wait for direction
-11. Build Daily Note from conversation — when the user indicates what they want to work on:
+5.5. Fuzzy item detection: flag low-confidence rankings after Focus
+5.6. Validation prompt: "Does this Focus ordering match your priorities today?" (Phase 1: always; Phase 2: only with fuzzy items)
+6. Full view on request: all batches, all efforts, top threads, stale Maps
+7. Wait for direction
+8. Build Daily Note from conversation — when the user indicates what to work on:
    — Pull focused items from indicated Maps, grouped by batch
    — Scan remaining Maps for time-sensitive/routine items (nothing falls through cracks)
    — Keep to 8-15 items. Present in chat for one confirmation pass, then write to file.
@@ -487,7 +486,7 @@ efforts: [<slug>, ...]          # Filled during triage
 ```
 1. Scan all Maps for open loops and active threads
 2. Scan Notes for active/waiting items with approaching due dates
-3. Group items by context batch to minimize context switching
+3. Group items by context batch
 4. Sort batches by combined weight, items within by effort weight
 5. Zero suppression — every batch rendered fully
 6. Generate Daily/YYYY-MM-DD.md with all items linked to source Notes/Maps
@@ -509,17 +508,16 @@ efforts: [<slug>, ...]          # Filled during triage
 1. Find all Inbox items where triaged: false
 2. For each: match content against Maps, assign efforts/status — no confirmation
 3. Execute immediately:
-   a. Create Note in Notes/ (or append to existing); include importance field
+   a. Create Note in Notes/ (or append to existing)
    b. Update relevant Map(s): add link, increment open_loops, update last_active
    c. Mark Inbox item triaged: true
 4. Report summary: "Auto-triaged N items: [title] → [effort], ..."
-5. Log classification decisions with match rationale to ## Session Log in Daily Note
 ```
 
-### Focus Pivot (`/focus`)
+### Deep Flow Override (`/focus`)
 
 ```
-1. Resolve effort from flexible input (match against names, slugs, and aliases — case-insensitive, partial match)
+1. Resolve effort from flexible input
 2. Load the Map
 3. Show active threads, related notes, related maps
 4. Log context switch in daily note
@@ -530,39 +528,29 @@ efforts: [<slug>, ...]          # Filled during triage
 
 ```
 1. Read today's Daily note and Map activity
-2. Read relevant Maps and Notes for context on what moved today
-3. Present reflection narrative: what happened, what emerged, patterns
-4. Flag items needing human attention (deferred 3+ times, efforts gone dark, cross-effort tensions)
-5. Invite optional reflection — user can volunteer status changes
-6. Apply any status changes the user offers
+2. Present reflection narrative: what happened, what emerged, patterns
+3. Flag items needing human attention (deferred 3+, gone dark, cross-effort tensions)
+4. Invite optional reflection: "Anything else before I clean up?"
+5. Apply any status changes the human volunteers
 6.5. Session-end recompute: refresh weights with today's activity, Minor Actions, calibration
-7. Update Daily note: End of Day section, counts
-8. Auto-trigger /defrag (full pass) for all bookkeeping
-8.5. Set close_complete: true in today's Daily Note frontmatter (signals next /pulse to skip redundant startup)
+6. Update Daily note: End of Day section, counts
+7. Auto-trigger /defrag (full pass)
+7.5. Set close_complete: true in today's Daily Note frontmatter (signals next /pulse to skip redundant startup)
 ```
 
 ### Defrag (`/defrag`)
 
 ```
-Light pass (during /pulse):
-1. Auto-triage pending Inbox items
-2. Reconcile Map open_loops counts against actual Notes + unchecked Minor Actions
-3. Flag stale Maps (last_active exceeds threshold)
-4. Scan Minor Actions for overdue items
-5. Report briefly — one-line summary for the pulse briefing
-
-Full pass (after /close or manual):
-All of the above, plus:
-6. Auto-defer unchecked Daily note items to tomorrow
-7. Auto-complete checked items (update Note status)
-8. Catch misclassifications from auto-triage (flag, don't auto-fix)
-9. Flag stale items (active Notes past their timescale window — see threshold table in defrag skill)
-10. Identify merge candidates (overlapping Notes in same effort)
-10.5. Promote plain-text bullets in Active Threads → Minor Actions (importance: medium)
-11. Minor Actions cleanup (remove old checked items, flag overdue, promote scope-grown items)
-12. Update all timestamps (last_active on Maps, updated on Notes)
-13. Report structured summary of everything done and flagged
-14. Log to Daily Note — append per-decision trace under ## Session Log section (see defrag skill for format)
+1. Auto-triage any pending Inbox items
+2. Reconcile Map open_loops counts against actual active/waiting Notes
+3. Auto-defer unchecked Daily items to tomorrow
+4. Auto-mark checked Daily items as done in source Notes
+5. Catch misclassifications (content vs assigned effort)
+6. Flag stale items (active, past their timescale window — see threshold table in defrag skill)
+7. Identify merge candidates (overlapping notes in same effort)
+8. Update all timestamps (last_active on Maps, updated on Notes)
+9. Report summary
+10. Log to Daily/logs/YYYY-MM-DD-log.md — append per-decision trace (see defrag skill for format)
 ```
 
 ### Priority Recomputation (`/recompute`)
@@ -572,12 +560,11 @@ All of the above, plus:
 2. Scan Notes for urgency signals (due dates, stale waiting items)
 3. Scan Minor Actions across all Maps for urgency signals
 4. Calculate recency from Daily notes (last 7 days)
-5. Calculate loop_factor from importance-weighted open items (Notes + Minor Actions)
+5. Calculate effort from Note update frequency
 6. Compute raw weights
 7. Apply calibration adjustments from Notes/pulse-priority-calibration.md
 8. Update Map frontmatter, update Home.md Current Focus section
-9. Present table with full breakdown (including Minor Actions + loops + calibration columns) and change deltas
-10. Log weight snapshot with deltas and urgency sources to ## Session Log in Daily Note
+9. Present table with full breakdown (including Minor Actions + calibration columns) and change deltas
 ```
 
 ---
@@ -619,14 +606,14 @@ Skills are defined in `.claude/skills/` and invoked as slash commands.
 
 | Skill | File | Trigger | Arguments |
 |-------|------|---------|-----------|
-| `/pulse` | `pulse/SKILL.md` | Session start (includes light defrag) | None |
+| `/pulse` | `pulse/SKILL.md` | Session start | None |
 | `/birdseyereview` | `birdseyereview/SKILL.md` | Full landscape audit (periodic reviews) | Optional: date |
 | `/capture` | `capture/SKILL.md` | Quick capture | The thought to capture |
-| `/triage` | `triage/SKILL.md` | Auto-process inbox (no confirmation) | Optional: specific file |
-| `/focus` | `focus/SKILL.md` | Pivot to effort | Effort name (flexible matching) |
-| `/close` | `close/SKILL.md` | End-of-session reflection + auto-defrag | Optional: date |
+| `/triage` | `triage/SKILL.md` | Auto-process Inbox items | Optional: specific file |
+| `/focus` | `focus/SKILL.md` | Enter deep flow on an effort | Effort name (flexible matching) |
+| `/close` | `close/SKILL.md` | End-of-session reflection | Optional: date |
+| `/defrag` | `defrag/SKILL.md` | Organizational cleanup | Optional: `light` or `full` |
 | `/recompute` | `recompute/SKILL.md` | Refresh priority weights | Optional: effort spike |
-| `/defrag` | `defrag/SKILL.md` | Organizational cleanup (full pass) | Optional: `light` or `full` |
 | `/efforts` | `efforts/SKILL.md` | Manage effort lifecycle | `add`, `splinter <slug>`, `merge <slug> <slug>`, `review` |
 
 ### Creating New Skills
@@ -647,23 +634,21 @@ Rationale for non-obvious choices, preserved for future reference.
 | Flat Notes/ directory | Deep nesting makes LLM traversal expensive. Efforts are encoded in frontmatter, not folder paths. |
 | Computed priority (not manual) | Manual priority rot. Computed weights reflect reality without maintenance burden. |
 | Maps as source of truth (not a database) | Markdown files are human-readable, version-controllable, and Obsidian-native. No external dependencies. |
-| Agent-managed frontmatter | Removes friction from capture. Ensures schema consistency. User thinks; agent files. |
+| Agent-managed frontmatter | Removes friction from capture. Ensures schema consistency. The user thinks; agent files. |
 | Context batches (not time blocks) | Time blocking fails for creative/knowledge work. Batching by cognitive context respects how attention actually works. |
-| Two-axis batching (domain + mode) | Domain switching (reloading a codebase/stakeholder world) is more expensive than mode switching (analytical→creative). The primary grouping axis is shared problem domain, with cognitive mode as a secondary signal. |
-| Soft suppression over hiding | Low-value batches are collapsed to a single line rather than omitted. This preserves awareness without prompting action — the user can always pivot if inspiration strikes. |
+| Two-axis context batching (problem domain + mode) | Problem domain switching (reloading mental models, codebases, stakeholder context) is far more expensive than mode switching (analytical→creative). Capturing both axes makes batch boundaries more principled. |
+| Batch soft-suppression | Low-value batches on the daily checklist force unnecessary context switches. Collapsing them to a single line keeps them visible without prompting action. |
 | Inspiration override as first-class concept | Rigid systems get abandoned. Honoring impulse and energy produces better outcomes than forced compliance. |
-| Auto-triage (no confirmation) | Confirmation cycles impose cognitive load at exactly the wrong moment — transitioning back to work. Misclassification cost is low (defrag catches it); confirmation cost is real. |
-| Reflection-only review | Item-by-item "defer/wait/done/drop?" loops are bureaucratic, not reflective. The user's end-of-session energy is better spent on narrative reflection. All bookkeeping moves to defrag. |
-| Defrag as separate skill | Separates thinking (human) from filing (agent). Review is for reflection; defrag handles mechanics. Three entry points (post-review, pulse light pass, manual) ensure cleanup happens without human effort. |
 | Wikilinks over markdown links | Obsidian graph view. Refactoring-safe (rename propagation). Shorter syntax. |
 | 7-day done→archive window | Keeps completed items visible long enough to inform review, short enough to not clutter. |
-| Maps as sole effort source | Effort definitions live in Map frontmatter. No intermediate config file. Ships with pre-built default Maps. |
-| effort_level over effort_estimate | Fibonacci hours had no consumer in the priority formula — pure metadata overhead. effort_level (trivial/small/medium/large) captures mental absorption — what actually matters for planning — without false precision. |
+| Auto-triage (no confirmation) | The cost of a misclassified note is low (defrag catches it), while N confirmation cycles impose real cognitive load at the worst moment — the transition back to work. |
+| Reflection-focused review | End-of-day is lowest-energy time. Item-by-item decisions are the wrong ask. Narrative reflection surfaces insight; mechanical bookkeeping is delegated to defrag. |
+| effort_level over effort_estimate | Fibonacci hours confused non-developers and were never consumed by the priority formula. effort_level (trivial/small/medium/large) captures mental absorption — what actually matters for planning — without false precision. |
 | timescale field on Notes | The 7-day recency window creates a one-week memory horizon. Items with monthly or quarterly cadence drop off the radar unfairly. timescale lets defrag and pulse judge staleness relative to the item's natural rhythm, not a fixed window. |
-| Session Log — decision trace layer | Replaced one-liner defrag log with per-decision traces. Added persistent logging to /recompute (weight snapshots with deltas and urgency sources), /defrag (per-Map reconciliation, per-Note stale checks), /pulse (suppression reasoning for batches and efforts), and /triage (classification decisions with match rationale). All append to ## Session Log in Daily Note. Purely a debugging layer for tracing priority misses and suppression errors across sessions. |
+| Defrag as separate skill | Separates thinking (human) from filing (agent). Triage and review shed their bookkeeping; defrag absorbs it and runs automatically or on demand. |
+| Maps as sole effort source (no efforts.yaml) | efforts.yaml was a bootstrap seed that became a dead config file once Maps existed. Maps already contained effort metadata in frontmatter — efforts.yaml just duplicated it. One source of truth (Maps) with no intermediate config. |
 | Single calibration Note (not distributed across Daily Notes) | Agent reads one file for full correction history. Distributed corrections across Daily Notes would require scanning 14+ files at every /pulse. Single file = O(1) lookup. |
 | Minor Actions as first-class urgency signals | Real deadlines don't always have frontmatter. Bare-text items in Maps were invisible to the formula — items with genuine urgency but zero formula weight. Minor Actions section gives incidentals a scannable home without Note overhead. |
-| Replace effort_factor with importance-weighted loop_factor | `effort_factor` (note update frequency) overlapped with `recency_boost` — both measured 7-day activity. Replaced with `loop_factor`: per-item importance weighting (high +0.04, medium +0.02, low +0.01, cap 0.10). Added `importance: low\|medium\|high` to Notes frontmatter and Minor Actions inline format. Minor Actions now count toward `open_loops`. Plain-text bullets promoted to Minor Actions during defrag. `/pulse` Focus reworked to be item-driven (top 5 by importance across all efforts) instead of effort-driven, with importance override for suppression. |
 
 ---
 
@@ -681,7 +666,8 @@ Record significant changes to the system here. Date, what changed, why.
 | 2026-03-12 | /efforts skill + pre-built default Maps | Engine ships with 3 default Maps. /efforts skill handles add, splinter, merge, review with litmus test and anti-spaghetti guidelines. |
 | 2026-03-12 | Eliminated efforts.yaml | Maps are the sole source of truth for effort definitions. Context batch definitions moved to CLAUDE.md. Pre-built default Maps replace YAML bootstrap. |
 | 2026-03-12 | Replace effort_estimate with effort_level + timescale | effort_level (trivial/small/medium/large) captures mental absorption. timescale (daily→annual) captures periodicity and addresses the 7-day recency bias for longer-cadence items. |
-| 2026-03-12 | Session Log — decision trace layer for debugging | Replaced one-liner defrag log with per-decision traces. Added persistent logging to /recompute, /defrag, /pulse, and /triage. All append to ## Session Log in Daily Note. |
+| 2026-03-12 | Session Log — decision trace layer for debugging | Replaced one-liner defrag log with per-decision traces. Added persistent logging to /recompute, /defrag, /pulse, and /triage. All append to Session Log in Daily Note. |
+| 2026-03-12 | Unify schema: `domain:` → `effort:` | Personal and public engine diverged — one used `domain:`, the other used `effort:`. Unified on `effort:` everywhere. Separate efforts can live under the same problem domain; "effort" is the more precise term. |
 | 2026-03-14 | Priority feedback loop & trust calibration | Added calibration log (`Notes/pulse-priority-calibration.md`), Minor Actions sections in Maps, fuzzy item detection, validation prompt in /pulse, session-end recompute in /close, Minor Actions cleanup in /defrag. Introduced PAR metric and Phase 1→2 trust transition criteria. |
 | 2026-03-14 | close_complete flag — skip redundant /pulse startup | `/close` sets `close_complete: true` in Daily Note frontmatter after successful defrag+recompute. Next `/pulse` reads yesterday's flag to skip light defrag and inline recompute, trusting cached weights. Inbox scan still runs for overnight captures. Reduces morning startup latency with no accuracy loss. |
 | 2026-03-14 | Replace effort_factor with importance-weighted loop_factor | `effort_factor` (note update frequency) overlapped with `recency_boost` — both measured 7-day activity. Replaced with `loop_factor`: per-item importance weighting (high +0.04, medium +0.02, low +0.01, cap 0.10). Added `importance` field to Notes and Minor Actions. Minor Actions now count toward `open_loops`. Plain-text bullets promoted to Minor Actions during defrag. `/pulse` Focus reworked to item-driven (top 5 by importance across all efforts), with importance override for suppression. |

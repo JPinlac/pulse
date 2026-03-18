@@ -9,6 +9,18 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 Pure reflection. No item-by-item status decisions. The agent presents a narrative, the human reflects, then defrag handles the bookkeeping.
 
+### Quick Close (`/close q` or `/close quick`)
+
+If $ARGUMENTS contains `q` or `quick`, run a lightweight save-state (use before clearing context, mid-session checkpoints, etc.):
+1. Skip steps 2–5 (no reflection narrative, no flags, no human prompts)
+2. Run step 6.5 (inline recompute — captures current state)
+3. Run step 7 (update Daily note — items_completed/deferred, efforts_touched)
+4. Run step 8 as **light defrag only** (not full)
+5. Set `last_refreshed: HH:MM` in today's Daily note frontmatter — do NOT set `close_complete: true` (checkpoint, not session end)
+6. Respond: `State saved. Context is clear to start fresh.`
+
+Total: ~2 turns. The `last_refreshed` timestamp tells the next `/pulse` that state is fresh — it will skip the inline refresh (or run triage-only if new inbox items arrived). No ceremony required.
+
 ### Steps
 
 1. **Read today's Daily note** (`Daily/YYYY-MM-DD.md`). If none exists, check what Maps were touched today by looking at `last_active` dates.
@@ -50,13 +62,15 @@ Only include if genuinely noticed — don't fabricate patterns.]
    - Minor Actions scanning (overdue items, newly added items)
    - Apply calibration adjustments from `Notes/pulse-priority-calibration.md`
    - Update Map weights in frontmatter
-   - Log updated weight table to Session Log (ensures next session starts from accurate baseline)
+   - Log updated weight table to `Daily/logs/YYYY-MM-DD-log.md` (ensures next session starts from accurate baseline)
 
 7. **Update the Daily note** — fill in the `## End of Day` section with the reflection summary. Update `items_completed` and `items_deferred` counts, finalize `efforts_touched`.
 
 8. **Auto-trigger `/defrag`** — run a full defrag pass. This handles all the mechanical bookkeeping: auto-defer open items, auto-mark checked items done, reconcile Maps, flag stale items.
 
-8.5. **Set close flag** — after successful defrag + recompute, set `close_complete: true` in today's Daily Note frontmatter. This tells the next `/pulse` session that defrag and recompute already ran, so it can skip redundant startup work.
+8.5. **Set freshness + close flag** — after successful defrag + recompute:
+   - Set `last_refreshed: HH:MM` in today's Daily note frontmatter (gates `/pulse` inline refresh skip)
+   - Set `close_complete: true` (signals a **full** defrag ran — `/pulse` can skip deeper checks like misclassification scan and merge candidate detection beyond what `last_refreshed` alone gates)
 
 9. **Close with warmth** — after defrag completes, deliver a brief closing message:
 

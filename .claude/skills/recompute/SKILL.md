@@ -15,7 +15,8 @@ For each Map, compute:
 
 ```
 base_score = base_priority / 10                    # normalize to 0-1
-recency_boost = (interactions_last_7_days) × 0.03  # +0.03 per touch, max +0.15
+recency_boost = max(0, 0.12 × (1 - days_since_last_active / 7))  # from Map frontmatter only
+# Examples: 0 days → +0.12, 1 day → +0.10, 3 days → +0.07, 5 days → +0.03, 7+ days → 0
 urgency_spike = 0.0-0.2                            # from due dates or blockers in linked notes
 loop_factor = min(sum(per_item_weight), 0.10)       # importance-weighted open items
 
@@ -40,9 +41,10 @@ Per-item weights for loop_factor: `high: 0.04`, `medium: 0.02`, `low: 0.01`. Def
    - Items due within 2 days: +0.03 each
    - Minor Actions are first-class urgency signals — they feed the formula without requiring Note overhead
 
-4. **Calculate recency** from `last_active` and Daily notes:
-   - Count how many of the last 7 daily notes touched each effort (via `efforts_touched`)
-   - Each touch = +0.03, capped at +0.15
+4. **Calculate recency** from `last_active` in Map frontmatter:
+   - Compute `days_since_last_active = today - last_active`
+   - Apply decay formula: `recency_boost = max(0, 0.12 × (1 - days_since_last_active / 7))`
+   - No Daily note reads needed for recency — `last_active` is the authoritative signal
 
 5. **Calculate loop_factor** from importance-weighted open items:
    - For each effort, collect open items: active/waiting Notes + unchecked Minor Actions
@@ -58,6 +60,16 @@ Per-item weights for loop_factor: `high: 0.04`, `medium: 0.02`, `low: 0.01`. Def
    - Calibration offsets are applied after raw weight computation but before capping at 1.0.
 
 8. **Update** each Map's `priority_weight` in its frontmatter.
+
+8.5. **Update `Maps/INDEX.md`** — write-behind after all Map frontmatter updates. Rebuild the full table from current Map values:
+   - `slug` from Map `effort` field
+   - `weight` from newly computed `priority_weight`
+   - `loops` from reconciled `open_loops`
+   - `last_active` from Map frontmatter
+   - `high_items` — first unchecked `importance: high` Minor Action text; else highest-importance active Note title; else "—"
+   - `next_due` — nearest due date across unchecked Minor Actions + active Notes; else "—"
+   - Update frontmatter `updated: YYYY-MM-DD`
+   - Order rows by `priority_weight` descending
 
 9. **Update `Home.md`** — refresh the Current Focus section with the top 3-5 items based on new weights.
 
@@ -76,7 +88,7 @@ Per-item weights for loop_factor: `high: 0.04`, `medium: 0.02`, `low: 0.01`. Def
 - [effort] ↓ X.XX → X.XX (reason)
 ```
 
-11. **Log recompute snapshot** — append a timestamped weight table to `## Session Log` in today's Daily Note (`Daily/YYYY-MM-DD.md`). Create the section if it doesn't exist. This is the same table from step 10, persisted for later debugging.
+11. **Log recompute snapshot** — append a timestamped weight table to `Daily/logs/YYYY-MM-DD-log.md`. Create the file (and `Daily/logs/` directory) if they don't exist. Do NOT write to the Daily note itself. This is the same table from step 10, persisted for later debugging.
 
    Format:
    ```
@@ -92,11 +104,11 @@ Per-item weights for loop_factor: `high: 0.04`, `medium: 0.02`, `low: 0.01`. Def
    Calibration applied: [effort: +/-X.XX (reason)] or "none"
    ```
 
-   Include the delta column showing change from previous weight. Include the urgency sources line listing which specific Notes contributed urgency spikes. If no Daily Note exists yet, create one with minimal frontmatter and the Session Log section.
+   Include the delta column showing change from previous weight. Include the urgency sources line listing which specific Notes contributed urgency spikes. If no Daily Note exists yet, create one with minimal frontmatter (no Session Log section — that goes in `Daily/logs/`).
 
 ### Implicit Invocation
 
-The /recompute formula now runs inline during `/pulse` (step 6) and `/close` (step 6.5). When invoked inline, skip the presentation step (step 10) and the Home.md update (step 9) — those are handled by the calling skill. The Session Log entry is always written regardless of invocation mode.
+The /recompute formula runs inline during `/pulse` (step 5, Phase D) and `/close` (step 6.5). When invoked inline, skip the presentation step (step 10), the Home.md update (step 9), and the INDEX.md update (step 8.5) — those are handled by the calling skill. The Session Log entry is always written regardless of invocation mode.
 
 ### Principles
 - Weights reflect reality, not aspiration

@@ -36,7 +36,8 @@ New batches are created via `/efforts add` and added to this table.
 - `Maps/` — One MOC per effort (source of truth); may include `## Minor Actions` sections
 - `Notes/` — All content notes (flat)
 - `Notes/pulse-priority-calibration.md` — Priority correction log, PAR tracking, calibration offsets
-- `Daily/` — Session agenda + effort log (YYYY-MM-DD.md); `close_complete` flag in frontmatter signals next `/pulse` to skip redundant defrag+recompute
+- `Daily/` — Session agenda only (YYYY-MM-DD.md, ≤60 lines); `last_refreshed` timestamp in frontmatter gates `/pulse` startup — skip inline refresh if already done today
+- `Daily/logs/` — Session Log decision traces (YYYY-MM-DD-log.md); never read during `/pulse`
 - `Inbox/` — Zero-friction capture
 - `Templates/` — Obsidian templates
 - `Queries/` — Saved Dataview queries
@@ -45,7 +46,7 @@ New batches are created via `/efforts add` and added to this table.
 
 ### Session Start
 1. Read `Home.md` for priorities
-2. Read relevant Map(s) for user's intent
+2. Read relevant Map(s) for the user's intent
 3. If Maps/ is empty: run `/efforts bootstrap` to generate starter Maps, then proceed
 4. If daily session: generate `Daily/YYYY-MM-DD.md` from Map open loops
 
@@ -53,20 +54,20 @@ New batches are created via `/efforts add` and added to this table.
 The Daily Note (`Daily/YYYY-MM-DD.md`) accretes through conversation, not batch-generated.
 - **After `/pulse` briefing**: when the user indicates direction, create/update the Daily Note with a prioritized agenda. Pull focused items from relevant Maps AND routine life items so nothing falls through cracks. Aim for 8-15 items. Present in chat for one confirmation pass, then commit to file.
 - **During the session**: log effort silently — context switches, completions, new items that emerge.
-- **`/defrag`**: appends decision traces to `## Session Log`.
+- **`/defrag`**: appends decision traces to `Daily/logs/YYYY-MM-DD-log.md`.
 - **`/close`**: caps the Daily Note with End of Day reflection.
 
 The Daily Note is the single source of truth for what was planned and what actually happened today.
 
 ### Session Log — Decision Trace Layer
-The `## Session Log` section in each Daily Note captures agent decisions for later debugging. This is not user-facing — it exists so an LLM in a future session can trace why something was prioritized, suppressed, or classified the way it was.
+Session logs live in `Daily/logs/YYYY-MM-DD-log.md` — separate from the Daily Note. This is not user-facing — it exists so an LLM in a future session can trace why something was prioritized, suppressed, or classified the way it was. The Daily Note itself stays lean (agenda + completions only, ≤60 lines).
 
 Five operations write to Session Log:
 - **`/recompute`** — appends full weight table with per-component breakdown (including Minor Actions and calibration columns) and delta from previous values. Includes which Notes and Minor Actions sourced urgency spikes, and any calibration offsets applied.
 - **`/defrag`** — appends per-Map reconciliation traces, per-Note stale checks with thresholds, per-item defer/complete/misclassification decisions, and Minor Actions cleanup results.
 - **`/pulse`** — appends suppression reasoning, inline recompute results, fuzzy item detection, and priority validation result.
 - **`/triage`** — appends classification decisions with match rationale: which Map purpose matched each Inbox item and why.
-- **Priority Validation** — appends validation outcome (accepted/corrected) with correction details if applicable. Written during `/pulse` step 7.6.
+- **Priority Validation** — appends validation outcome (accepted/corrected) with correction details if applicable. Written during `/pulse` step 5.6.
 
 Each entry is `### [Operation] — HH:MM` with structured subsections. Omit empty subsections. Keep individual lines compact (one line per decision) but complete enough that reading the Session Log alone is sufficient to answer "why was X ranked/hidden/classified this way on this date."
 
