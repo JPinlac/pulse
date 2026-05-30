@@ -20,23 +20,58 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
 
 1. **Clone this repo**:
    ```bash
-   git clone <repo-url> my-vault
-   cd my-vault
+   git clone <repo-url> pulse
+   cd pulse
    ```
 
-2. **Start a session** — open Claude Code in this directory and run:
+2. **Open Claude Code** in this directory and run:
    ```
    /pulse
    ```
-   The agent walks you through setup and gives you a priority briefing. You're live.
+   On first launch, the agent detects an empty vault and walks you through setup conversationally — no config editing, no manual steps. You describe your life; the agent builds the vault.
 
-3. **Customize your efforts** efforts are any projects, hobbies, responsibilities, or any activity that could use long term planning. **PULSE works best when efforts reflect how *you* actually spend your attention.** Run `/efforts` to tailor them to your life, or add, splinter, merge, and review efforts at any time. (In case the bolding didn't get your attention. *I highly recommend doing this!*)
-
-4. **Close the session/day** - at the end of the session run the `/close` skill for a recap, some automatic management of any information, and a confirmation that there are no priority loops left open. Good work! If you forget to close a session don't worry, /pulse runs the automatic system management or you can manually run `defrag`. We do recommend getting into the habit of closing, being able to deeply relax and be fully present with whatever awaits is a blessing.
-
-   ```bash
+3. **Close the session** — run `/close` at the end of each session for reflection and cleanup.
+   ```
    /close
    ```
+
+**(Optional) Set the vault path** — if your vault lives outside the repo, add to your shell profile:
+```bash
+export PULSE_VAULT=/path/to/your/pulse-vault
+```
+
+## Migrating from a Pre-Separation Vault
+
+The Pulse 1.0 version separated the PULSE engine (`pulse-engine/`) from your personal vault (`pulse-vault/`). If you cloned PULSE before that date, your vault data is in the repo root alongside the engine files. Here's how to upgrade:
+
+**1. Back up your existing vault:**
+```bash
+cp -r . ../pulse-backup-$(date +%Y-%m-%d)
+```
+
+**2. Pull the latest engine:**
+```bash
+git pull
+```
+
+**3. Run `/migrate` in a Claude Code session:**
+```
+/migrate ../pulse-backup-2026-05-30
+```
+
+That's it. The skill will:
+- Copy your Maps, Notes, Daily logs, Inbox captures, and Sati entries into `pulse-vault/`
+- Move `Maps/Pulse.md` to `Maps/_system/Pulse.md` (new location for system maps)
+- Generate `pulse-vault/user.config.yaml` from your effort definitions
+- Port any personal overrides from your old `CLAUDE.md` to `pulse-vault/CLAUDE.md`
+- Remove conflicting `[INIT]` template Maps
+- Run `pulse-calc.py` to validate everything loaded correctly
+
+After migration, your vault data lives in `pulse-vault/` (gitignored) and the engine stays in `pulse-engine/` (public). Future `git pull` updates won't touch your personal data.
+
+> **Note:** `/migrate-graph` is a separate skill for migrating vault items into a Neo4j knowledge graph. That's a different operation — don't confuse the two.
+
+---
 
 ## How It Works
 
@@ -88,18 +123,30 @@ PULSE is built in three stages. Each unlocks after the previous one earns trust 
 
 Stage 1→2 is the hardest transition — it requires you to stop verifying. That trust only comes from daily use.
 
-## Vault Layout
+## Repository Layout
 
 ```
-Home.md              ← Dashboard with priorities and recent activity
-Maps/                ← One file per effort. Source of truth.
-Notes/               ← All content. Flat. Linked from Maps.
-Daily/               ← Generated checklists. One per day.
-Inbox/               ← Quick capture. Agent triages into Notes.
-Templates/           ← Obsidian templates for each file type.
-Queries/             ← Saved Dataview queries.
-CLAUDE.md            ← Agent conventions and protocol.
-SYSTEM.md            ← Full system design spec.
+pulse/
+├── CLAUDE.md                  ← Thin loader (imports engine + vault config)
+├── README.md                  ← This file
+├── pulse-engine/              ← Public engine (redistributable, zero personal data)
+│   ├── CLAUDE.md              ← Agent conventions
+│   ├── SYSTEM.md              ← Full system design spec
+│   ├── ENGINE-SPEC.md         ← Engine ↔ vault interface contract
+│   ├── user.config.schema.json ← JSON Schema for user.config.yaml
+│   ├── user.config.example.yaml ← Starter config (copy to pulse-vault/)
+│   ├── scripts/pulse-calc.py  ← Deterministic priority computation
+│   ├── docs/                  ← Design theory and reference
+│   ├── templates/             ← Obsidian templates
+│   └── queries/               ← Saved Dataview queries
+└── pulse-vault/               ← Your personal vault (gitignored)
+    ├── user.config.yaml       ← Your efforts, batches, codebase registry
+    ├── Maps/                  ← One file per effort. Source of truth.
+    │   └── _system/Pulse.md   ← Engine meta-effort (system map)
+    ├── Notes/                 ← All content. Flat. Linked from Maps.
+    ├── Daily/                 ← Session agendas and logs.
+    ├── Inbox/                 ← Quick capture. Agent triages into Notes.
+    └── Sati/                  ← Emergence awareness log.
 ```
 
 ## Customization

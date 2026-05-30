@@ -1,0 +1,85 @@
+# PULSE User Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# [INIT] This is a starter configuration. Replace with your own efforts.
+#
+# After editing, run /efforts bootstrap to generate your Maps from this config.
+# See pulse-engine/ENGINE-SPEC.md for the full schema reference.
+# See pulse-engine/user.config.schema.json for machine-readable validation.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+# ── EFFORTS ──────────────────────────────────────────────────────────────────
+# Each effort maps to one Map file in pulse-vault/Maps/.
+# slug: kebab-case, unique. "pulse" is reserved — do not use.
+# base_priority: 1–10 (life-importance anchor; seeds but doesn't determine ranking)
+# batch: must match a batch name below (or a default: Work, Projects, Maintenance, Leisure)
+# purpose: one sentence describing what this effort is
+# aliases: optional alternative names for /focus matching
+
+efforts:
+  # [INIT] Replace these with your own efforts. Common starting points below.
+
+  - slug: work
+    batch: Work
+    base_priority: 9
+    purpose: "Primary income, professional development, and career"
+    aliases: [job, career]
+
+  - slug: health
+    batch: Maintenance
+    base_priority: 7
+    purpose: "Physical and mental wellness — medical, fitness, and self-care"
+    aliases: [medical, fitness, wellness]
+
+  - slug: relationships
+    batch: Maintenance
+    base_priority: 9
+    purpose: "Family, close friends, and partner — the people who matter most"
+    aliases: [social, family, friends]
+
+  - slug: home
+    batch: Maintenance
+    base_priority: 6
+    purpose: "Household management, chores, repairs, and admin logistics"
+    aliases: [house, chores, admin, maintenance]
+
+  - slug: personal-project
+    batch: Projects
+    base_priority: 7
+    purpose: "A focused personal or creative project with a clear goal"
+    aliases: [project, creative]
+
+  - slug: learning
+    batch: Projects
+    base_priority: 6
+    purpose: "Skill development, courses, reading, and structured study"
+    aliases: [study, education, courses]
+
+  - slug: leisure
+    batch: Leisure
+    base_priority: 3
+    purpose: "Hobbies, media consumption, games, and personal recharge"
+    aliases: [fun, hobbies, games, entertainment]
+
+
+# ── BATCHES ──────────────────────────────────────────────────────────────────
+# [INIT] Optional. The four default batches cover most setups.
+# Add your own if your efforts span domains not covered below.
+# If you don't define batches here, the defaults are used:
+#   Work | Projects | Maintenance | Leisure
+#
+# batches:
+#   - name: Research
+#     shared_context: "Academic papers, data, analysis tools"
+#     mindset: "Investigative, deep-reading"
+
+
+# ── CODEBASE REGISTRY ────────────────────────────────────────────────────────
+# [INIT] Optional. Used by /dispatch to spin up sub-agents in project directories.
+# Add entries for any effort that has a local codebase.
+#
+# codebase_registry:
+#   - name: work
+#     path: /home/yourname/code/your-main-project
+#   - name: personal-project
+#     path: /home/yourname/code/my-side-project

@@ -1,8 +1,31 @@
-# Obsidian config (user preference, not portable)
+# ── User vault — personal data, never committed to public engine ──────────────
+# Maps: personal content excluded; keep [INIT] templates and _system/ map
+pulse-vault/Maps/*.md
+!pulse-vault/Maps/\[INIT\]*.md
+!pulse-vault/Maps/_system/
+!pulse-vault/Maps/_system/*.md
+pulse-vault/Maps/.keep
+
+# Notes, Daily sessions, Inbox, Sati — fully personal
+pulse-vault/Notes/
+pulse-vault/Daily/
+pulse-vault/Inbox/
+pulse-vault/Sati/
+
+# User-specific files
+pulse-vault/Home.md
+pulse-vault/EVOLUTION.md
+pulse-vault/user.config.yaml
+pulse-vault/CLAUDE.md
+
+# Backup directory (local only)
+vault-backup-*/
+
+# ── Obsidian config (user preference, not portable) ───────────────────────────
 .obsidian/
 
-# Claude Code auto-memory (personal to each user)
+# ── Claude Code auto-memory (personal to each user) ──────────────────────────
 .claude/memory/
 
-# OS files
+# ── OS files ──────────────────────────────────────────────────────────────────
 .DS_Store
