@@ -101,7 +101,7 @@ Everything is filed. [If no due items remain open: "Your priority items are in g
 
 ### Sub-Agent Policy
 
-All sub-agents spawned during `/close` (recompute delegation, Daily note writes, defrag file operations) MUST use `model: "opus"` on the Agent tool call. Minimum across all PULSE sub-agents is sonnet; close sub-agents use opus for full reasoning fidelity.
+Writes are inline (main session) by default — Daily note writes and session-log appends are single-file ops, written inline. `/close` already runs inline (it has `Write`/`Edit`, no Agent tool). If a heavy batch is delegated to a **foreground** sub-agent (e.g. the auto-triggered `/defrag` full pass), that sub-agent MUST use `model: "opus"` (floor sonnet across all PULSE sub-agents). Never delegate a write to a background sub-agent (read-only).
 
 ### Principles
 - **This is reflective, not bureaucratic.** No "defer/wait/done/drop?" loops.

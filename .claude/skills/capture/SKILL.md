@@ -4,7 +4,7 @@ description: Quick capture a thought, idea, or task into the Inbox. Zero frictio
 user-invocable: true
 model: sonnet
 effort: medium
-allowed-tools: Agent
+allowed-tools: Read, Write
 argument-hint: "[q] <your thought or idea>"
 srsa: Act
 ---
@@ -13,7 +13,7 @@ srsa: Act
 
 Capture whatever the user says into the Inbox with zero friction.
 
-**IMPORTANT**: This skill MUST run as a background sub-agent to preserve main conversation context. Do NOT process the capture inline.
+**IMPORTANT**: Write the capture **inline** from the main session — it is lightweight (context extraction + one file write). Do NOT delegate to a background sub-agent: background agents are denied `Write`/`Edit`, so a delegated capture silently fails to file.
 
 ### Modes
 
@@ -39,7 +39,7 @@ Package this as a `## Conversational Context` block to include in the capture fi
 
 ### Act
 
-**Step 2 — Delegate immediately** — launch a background Agent (subagent_type: "general-purpose", model: "opus", run_in_background: true) with this prompt:
+**Step 2 — Write inline** — using the Write tool (main session), create the capture file in `Inbox/` to this spec:
 
 > Create a capture file in `Inbox/` with these specs:
 > - Filename: `Inbox/YYYY-MM-DD-[short-slug].md` (use today's date)
@@ -74,13 +74,13 @@ Package this as a `## Conversational Context` block to include in the capture fi
 
 ### Surface
 
-**Step 3 — Confirm immediately** — don't wait for the agent to finish. Report: "Captured: [title]. Filing in background — auto-triage will pick it up at next `/pulse` or `/triage`."
+**Step 3 — Confirm** — after the inline write completes (near-instant), report: "Captured: [title]. Auto-triage will pick it up at next `/pulse` or `/triage`."
 
 ### Principles
-- **Verbatim capture** — the user's words are the artifact. Do not expand, interpret, or reframe. The agent's value-add is the Conversational Context section, not content modification. Triage runs later without conversation access — context preserves what triage needs; verbatim preserves what the user said.
-- **Zero context disruption** — the main conversation must not lose flow
+- **Verbatim capture** — the user's words are the artifact. Do not expand, interpret, or reframe. The value-add is the Conversational Context section, not content modification. Triage runs later without conversation access — context preserves what triage needs; verbatim preserves what the user said.
+- **Minimal disruption** — context extraction + one inline write is lightweight; capture, confirm in one line, and return to the conversation. Don't narrate the file write.
 - **Context-aware by default** — conversational context is perishable; capture it now so triage has full signal later
 - Speed over perfection — get it captured first, auto-triage files it later
 - Don't over-interpret. Capture what was said, don't force-fit into efforts yet. Context is informational, not prescriptive.
-- Multiple captures in one message are fine — one agent call handles all of them
+- Multiple captures in one message are fine — write one file per thought in the same inline pass
 - The `q` flag exists for random thoughts that have nothing to do with what you're working on — don't bloat them with irrelevant context

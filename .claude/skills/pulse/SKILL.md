@@ -119,7 +119,7 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 ### What would you like to work on?
 ```
 
-**Sub-agent model policy**: All sub-agents spawned during `/pulse` (session log writes, calibration corrections, Phase E Map/INDEX updates) MUST use `model: "opus"` on the Agent tool call. Minimum across all PULSE sub-agents is sonnet; pulse sub-agents use opus for full reasoning fidelity.
+**Write policy**: Writes are inline (main session) by default — session log writes and calibration corrections are single-file ops, written inline. Only the Phase E Map+INDEX rewrite (heavy multi-file batch) may be delegated to a **foreground** sub-agent; if it is, that sub-agent MUST use `model: "opus"`. Never delegate any write to a background sub-agent (they are read-only).
 
 **Note loading constraint**: Do not speculatively read Notes during /pulse. Map entry summaries and Minor Actions inline text are the primary sources for Important Items. Only read a specific Note if its effective_item_score places it in the top 3 of Important Items AND the Map summary is insufficient to describe the item. Never read Notes for lower-ranked items or for general context-building.
 
@@ -219,7 +219,7 @@ The script provides `batches` (with `gated` flag), `resurfacing` candidates, and
    _Does this ordering match your priorities today?_
    ```
    - Silence or continuation = acceptance
-   - If the user corrects the ordering, delegate to a background agent to write a correction entry to `Notes/pulse-priority-calibration.md` with: the mis-ranked effort, full weight breakdown, component at fault, user's reasoning, and correction type (`ordering | suppression-error | missing-item | wrong-urgency`)
+   - If the user corrects the ordering, write a correction entry inline (main session — single-file write) to `Notes/pulse-priority-calibration.md` with: the mis-ranked effort, full weight breakdown, component at fault, user's reasoning, and correction type (`ordering | suppression-error | missing-item | wrong-urgency`)
    - Log validation result to Session Log as `### Priority Validation — HH:MM`
 
    **Phase 2 behavior**: Only show validation prompt when fuzzy items exist. Check PAR and phase criteria in `Notes/pulse-priority-calibration.md` to determine current phase.
@@ -274,7 +274,7 @@ The script provides `batches` (with `gated` flag), `resurfacing` candidates, and
 
    a. Create `Daily/YYYY-MM-DD.md` if it doesn't exist (use Daily Note template frontmatter).
    b. Pull top items from the Maps the user indicated interest in — these go first, grouped by batch.
-   c. Scan remaining Maps (especially family-social, house) for time-sensitive or routine items. Add as a lightweight section so nothing falls through cracks.
+   c. Scan remaining Maps (especially routine or maintenance efforts) for time-sensitive or routine items. Add as a lightweight section so nothing falls through cracks.
    d. Omit empty efforts. Keep it to 8-15 items — working agenda, not exhaustive audit.
    e. Present the agenda in conversation for one confirmation pass. After confirmation, write to file. Subsequent Daily Note updates during the session happen silently.
 

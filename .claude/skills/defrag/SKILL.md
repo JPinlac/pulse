@@ -162,7 +162,7 @@ Run everything in the light pass, plus:
 
 ### Sub-Agent Policy
 
-All sub-agents spawned during `/defrag` (file writes, INDEX updates, archive moves) MUST use `model: "opus"` on the Agent tool call. Minimum across all PULSE sub-agents is sonnet; defrag sub-agents use opus for full reasoning fidelity.
+`/defrag` writes inline (main session — it has `Write`/`Edit`, no Agent tool): file writes, INDEX updates, and archive moves all run inline. The full defrag pass *is* the canonical heavy multi-file batch; if any sub-batch is delegated to a **foreground** sub-agent, that sub-agent MUST use `model: "opus"` (floor sonnet across all PULSE sub-agents). Never delegate a write to a background sub-agent (read-only).
 
 ### Principles
 
