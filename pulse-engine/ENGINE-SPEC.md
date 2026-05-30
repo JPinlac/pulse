@@ -24,8 +24,7 @@ export PULSE_VAULT=/absolute/path/to/your/pulse-vault
 ### Engine Boundary Guarantee
 
 The engine (`pulse-engine/` and `.claude/skills/`) **never writes outside the vault path**. All
-file writes are contained within `$PULSE_VAULT/`. The only exception is temporary files in
-`/tmp/pulse-*` created by `/dispatch` for inter-agent communication.
+file writes are contained within `$PULSE_VAULT/`.
 
 ---
 
@@ -44,7 +43,6 @@ $PULSE_VAULT/
 │   ├── logs/                 ← decision traces (YYYY-MM-DD-log.md)
 │   └── cache/                ← script computation cache (YYYY-MM-DD-calc.json)
 ├── Inbox/                    ← zero-friction captures (.md, triaged: false)
-│   └── multi-agents/         ← inter-agent result boundary
 └── Sati/                     ← emergence awareness log
 ```
 
@@ -71,10 +69,6 @@ batches:          # override or extend the default batch set
   - name:         # string, unique
     shared_context: # string, describes the cognitive domain
     mindset:      # string, describes the cognitive mode
-
-codebase_registry: # for /dispatch skill
-  - name:         # string (effort slug or project name)
-    path:         # string, absolute path to the project directory
 ```
 
 **Reserved slugs**: `pulse` is reserved for the engine's system Map and must not appear in
@@ -201,7 +195,6 @@ uv run pulse-engine/scripts/pulse-calc.py \
 | Write Session Log | Agent (6 operations: /recompute, /defrag, /pulse, /triage, validation, Sati) | `pulse-vault/Daily/logs/YYYY-MM-DD-log.md` |
 | Write Cache | `pulse-calc.py --cache` | `pulse-vault/Daily/cache/YYYY-MM-DD-calc.json` |
 | Create Capture | Agent (`/capture`) | `pulse-vault/Inbox/YYYY-MM-DD-[slug].md` |
-| Write Sub-Agent Result | Dispatched agent | `pulse-vault/Inbox/multi-agents/YYYY-MM-DD-HH-MM-[slug].md` |
 
 **The user never writes frontmatter.** All YAML blocks are created and maintained by the agent.
 

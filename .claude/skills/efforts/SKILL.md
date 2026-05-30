@@ -35,7 +35,6 @@ When `Maps/` has no user Maps (only `[INIT]` templates, `_system/`, or is empty)
    mkdir -p "${PULSE_VAULT:-./pulse-vault}/Notes/archive"
    mkdir -p "${PULSE_VAULT:-./pulse-vault}/Daily/logs"
    mkdir -p "${PULSE_VAULT:-./pulse-vault}/Daily/cache"
-   mkdir -p "${PULSE_VAULT:-./pulse-vault}/Inbox/multi-agents"
    mkdir -p "${PULSE_VAULT:-./pulse-vault}/Sati"
    ```
    Also create `pulse-vault/Maps/.keep` (empty sentinel) and `pulse-vault/Sati/emergence-log.md` if absent.

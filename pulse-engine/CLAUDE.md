@@ -46,7 +46,7 @@ PULSE is built on **Sense → Route → Surface → Act** — the irreducible sh
 **Act** — Mechanical bookkeeping. Silent where possible.
 - Map/INDEX frontmatter updates, Note lifecycle transitions, Daily Note, session logs
 - Inbox triage (create, archive), Minor Actions cleanup, dependency annotation cleanup
-- Skills: `/defrag` full pass, `/triage`, `/close`, background sub-agents for file writes
+- Skills: `/defrag` full pass, `/triage`, `/close`; writes are inline (main session) by default, foreground sub-agents only for heavy multi-file batches
 
 ### User & Dyad (contextual — why the system is designed this way)
 
@@ -174,9 +174,9 @@ Maps may include an optional `## Minor Actions` section for lightweight tasks wi
 Optional dependency: `- [ ] Item description (importance: medium, depends:: [[note-slug]])`. Multiple deps: `depends:: [[a]], [[b]]`. Uses Dataview `::` double-colon for queryability. When a dependency target is `done`/`archived`, `/defrag` surfaces the item as unblocked.
 
 ### Capture Flow
-1. Delegate to a background sub-agent (zero context disruption to main conversation)
-2. Sub-agent creates `.md` in `Inbox/` with capture frontmatter
-3. Confirm immediately — don't wait for the agent to finish
+1. Extract conversational context inline (active efforts, recent topics, likely deps)
+2. Write the `.md` to `Inbox/` inline (main session) with capture frontmatter — near-instant, no agent spawn
+3. Confirm: `Captured: [title].`
 4. Auto-triage picks it up at next `/pulse` or `/triage` — no human confirmation needed
 5. `/defrag` catches any misclassifications later
 
@@ -184,19 +184,21 @@ Optional dependency: `- [ ] Item description (importance: medium, depends:: [[no
 Low-value batches are soft-suppressed in `/pulse` output. Important Items are ranked by `effective_item_score` (algorithm-derived), not by importance tier — importance is a soft seed, not a display gate. `/birdseyereview` provides a full unsuppressed landscape audit when needed. Suppressed batches and low-signal efforts (0 loops, stale, no deadlines) are folded — say "unfold" for the full landscape.
 
 ### Silent File Operations
-All file writes (Daily Notes, Session Logs, Map updates, triage results) should be delegated to background sub-agents where possible. The main conversation should only display human-readable output (briefings, confirmations, summaries).
+All file writes (Daily Notes, Session Logs, Map updates, triage results, captures) are performed **inline by the main session by default**. The main conversation should only display human-readable output (briefings, confirmations, summaries) — "silent" means the *output* is clean, not that the write is offloaded. Delegate a write to a **foreground** sub-agent only for genuinely heavy multi-file batches (full `/defrag` pass, `/pulse` Phase E Map+INDEX rewrite) where context isolation pays for the spawn cost.
+
+**Background sub-agents cannot write** — `Write`/`Edit` are denied in the detached background permission context (local `allow` rules are not honored there). **Never delegate a write to a background sub-agent.** Background sub-agents are valid only for **read-only** work (e.g. Sati observation); their findings are written back inline by the main session.
+
+**Files mutate; the audit appends.** Whoever writes may overwrite the file it's changing (current-state is mutable), but every material change is *also* appended to that day's Session Log (`Daily/logs/`) — PULSE's append-only changelog (see Session Log section). The file edit can overwrite; the changelog entry only ever appends.
 
 #### Sub-Agent Model Policy
+Governs **foreground** sub-agents (heavy batches) and read-only background observers — writes are inline by default, so this applies whenever a sub-agent *is* spawned.
 - **Floor**: sonnet. No sub-agent runs below sonnet.
-- **pulse, capture, dispatch, close, defrag**: opus. These are core PULSE operations — trust first, optimize later.
+- **pulse, close, defrag**: opus. These are core PULSE operations — trust first, optimize later. (`capture` no longer spawns an agent — it writes inline.)
 - **Agent tool calls**: specify `model: "opus"` (or `model: "sonnet"` for non-core) explicitly on every Agent tool invocation. Do not rely on inheritance.
-- **Dispatched CC sessions**: use `--model opus` flag on the `claude` command.
 
 #### Agent Classification
-- **Sub-agents** (Agent tool): spawned within the current session. Write directly to vault files (Maps, Notes, Daily, etc.).
-- **Dispatched agents** (`/dispatch`): separate Claude Code sessions. Write to `Inbox/multi-agents/` only — the inter-agent communication boundary.
-
-`/dispatch` is the classifier — anything spawned through it is an inter-agent process constrained to `Inbox/multi-agents/`. Sub-agents run in the same session and have full vault access, so no staging indirection is needed. The orchestrating session processes `Inbox/multi-agents/` during `/pulse` Phase A and `/triage` Phase -1.
+- **Foreground sub-agents** (Agent tool, synchronous): spawned within the current session, run on the main checkout, inherit the live permission context. Write directly to vault files (Maps, Notes, Daily, etc.). Reserved for heavy batches.
+- **Background sub-agents** (Agent tool, `run_in_background: true`): **read-only** — `Write`/`Edit` are denied in the detached permission context. Use for read/analysis fan-out only (e.g. Sati observation); never for writes.
 
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.

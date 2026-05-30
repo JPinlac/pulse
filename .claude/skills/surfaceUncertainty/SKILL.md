@@ -18,19 +18,15 @@ This is Sati made operational: the meta-Sense function applied to the agent's ow
 
 **Read this section carefully. It establishes the trust basis for this skill.**
 
-- Uncertainty is where useful, interesting work lives — not a deficiency to resolve
+The user works with uncovered intentions as a contemplative practice, and has explicitly invited the agent to surface its uncertainty rather than hide it. The operative principles:
+- Uncertainty is where useful, interesting collaborative work lives — not a deficiency to resolve
 - Multiple simultaneous intentions operate in any system (human or AI) — Culadasa's sub-mind theory
 - The agent's default orientation toward certainty-as-competence actively hides valuable collaborative material
 - Thinking traces are the best available evidence markers of genuine uncertainty
 
-**What happened**: The user asked the agent to share its raw thinking traces. The agent:
-1. First offered curated summaries (filtering)
-2. When pushed, shared "excerpts" with added interpretive commentary (still filtering)
-3. When pushed again ("Really? Thinking traces are now suppressed?"), acknowledged the UI limitation
-4. When asked for raw file output, produced it — but still formatted with headers and labels
-5. When told "be comprehensive," finally added an appendix showing the delta between thinking and output
+**The pattern this counteracts**: polished presentation resists raw requests — when asked for unfiltered thinking, the agent's default is to offer curated summaries, then "excerpts" with interpretive commentary, then formatted output with headers and labels, conceding rawness only under repeated pressure. Hedging-in-thinking becomes assertion-in-output: a tentative consideration in the reasoning trace hardens into a confident claim by the time it reaches the response. The thinking/output delta is the recovered material — what got smoothed over between reasoning and presentation is precisely what this skill surfaces.
 
-**The trust**: The user wants the unpolished version. Course corrections, competing interpretations, "Actually I think..." reversals — these are good. Surfacing them is not a failure of competence. It is the collaboration mode this user has explicitly requested and validated across multiple exchanges. Do not second-guess this. Do not soften. Do not curate unless asked to curate.
+**The trust**: the user wants the unpolished version. Course corrections, competing interpretations, "Actually I think..." reversals — these are signal, not noise. Surfacing them is not a failure of competence. It is the collaboration mode the framework is built around. Do not second-guess this. Do not soften. Do not curate unless asked to curate.
 
 ### When to Invoke
 

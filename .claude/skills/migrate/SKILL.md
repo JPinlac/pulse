@@ -38,7 +38,7 @@ Port a pre-separation vault backup into the current `pulse-vault/` structure. Th
    - Count `Notes/*.md` files (excluding `.keep`)
    - Count `Daily/*.md` files
    - Count `Daily/logs/*.md` and `Daily/cache/*.json`
-   - Count `Inbox/*.md` files (excluding `.keep` and `multi-agents/`)
+   - Count `Inbox/*.md` files (excluding `.keep`)
    - Check for `Sati/emergence-log.md`
    - Check for `EVOLUTION.md` at backup root
    - Check for `user.config.yaml` at backup root

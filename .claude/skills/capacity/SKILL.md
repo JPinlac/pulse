@@ -152,7 +152,7 @@ For each item, predict: **complete** / **defer** / **at risk**
 
 **Step 10 — Write to session log**:
 
-Delegate to a background sub-agent (model: opus). Append `### Capacity Prediction — HH:MM` to `Daily/logs/YYYY-MM-DD-log.md` with all sections structured as:
+Write inline (main session — single-file session-log append). Append `### Capacity Prediction — HH:MM` to `Daily/logs/YYYY-MM-DD-log.md` with all sections structured as:
 
 1. Backtest day number
 2. Load state inputs + rationale

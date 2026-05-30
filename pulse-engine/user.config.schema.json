@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PULSE User Configuration",
-  "description": "Defines the user's effort set, context batches, and optional codebase registry for /dispatch.",
+  "description": "Defines the user's effort set and context batches.",
   "type": "object",
   "required": ["efforts"],
   "additionalProperties": false,
@@ -69,25 +69,6 @@
           "mindset": {
             "type": "string",
             "description": "The cognitive mode for this batch. Secondary grouping signal."
-          }
-        }
-      }
-    },
-    "codebase_registry": {
-      "type": "array",
-      "description": "Optional. Maps effort slugs (or project names) to their local codebase directories. Used by /dispatch to set up git worktrees for sub-agents.",
-      "items": {
-        "type": "object",
-        "required": ["name", "path"],
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Effort slug or project name. Matched against the /dispatch argument."
-          },
-          "path": {
-            "type": "string",
-            "description": "Absolute path to the project directory on this machine."
           }
         }
       }

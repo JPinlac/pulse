@@ -12,22 +12,9 @@ srsa: Act+Sense
 
 Process untriaged items from `Inbox/` into the PULSE system. Execute immediately, report what was done.
 
-### Act — Multi-Agent Intake
-
-**Phase -1 — Process multi-agent task results** from `Inbox/multi-agents/` (runs first, before agent writes):
-
-1. Glob `Inbox/multi-agents/*.md` — exclude `CLAUDE.md` and `archive/`. If none, skip this phase.
-2. For each file, read frontmatter (`status`, `effort`, `task`, `agent_name`) and the `## Result` section.
-3. Present a one-line summary per result: `Agent result: [task] ([effort]) — [status]`
-4. If `## Vault Updates Needed` is non-empty, apply the suggested changes directly to vault files.
-5. Move processed files to `Inbox/multi-agents/archive/[filename]`.
-6. Log: `### Multi-Agent Intake — HH:MM` with per-result traces to Session Log.
-
----
-
 ### Sense — Scan and Classify
 
-1. **Find untriaged items** — scan `Inbox/` (not `Inbox/multi-agents/`) for files where `triaged: false` in frontmatter.
+1. **Find untriaged items** — scan `Inbox/` for files where `triaged: false` in frontmatter.
 
 2. **If no untriaged items**, report "Inbox clear" and stop.
 
