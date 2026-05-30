@@ -195,14 +195,10 @@ Governs **foreground** sub-agents (heavy batches) and read-only background obser
 - **Floor**: sonnet. No sub-agent runs below sonnet.
 - **pulse, close, defrag**: opus. These are core PULSE operations — trust first, optimize later. (`capture` no longer spawns an agent — it writes inline.)
 - **Agent tool calls**: specify `model: "opus"` (or `model: "sonnet"` for non-core) explicitly on every Agent tool invocation. Do not rely on inheritance.
-- **Dispatched CC sessions**: use `--model opus` flag on the `claude` command.
 
 #### Agent Classification
 - **Foreground sub-agents** (Agent tool, synchronous): spawned within the current session, run on the main checkout, inherit the live permission context. Write directly to vault files (Maps, Notes, Daily, etc.). Reserved for heavy batches.
 - **Background sub-agents** (Agent tool, `run_in_background: true`): **read-only** — `Write`/`Edit` are denied in the detached permission context. Use for read/analysis fan-out only (e.g. Sati observation); never for writes.
-- **Dispatched agents** (`/dispatch`): separate Claude Code sessions. Write to `Inbox/multi-agents/` only — the inter-agent communication boundary.
-
-`/dispatch` is the classifier — anything spawned through it is an inter-agent process constrained to `Inbox/multi-agents/`. Foreground sub-agents run in the same session and have full vault access, so no staging indirection is needed. The orchestrating session processes `Inbox/multi-agents/` during `/pulse` Phase A and `/triage` Phase -1.
 
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.

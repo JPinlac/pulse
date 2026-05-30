@@ -53,8 +53,7 @@ Do NOT attempt to read INDEX.md, run pulse-calc.py, or process Inbox before boot
    #### Act — Inbox Triage
 
    **Phase A** (always runs, even when close flag is set):
-   - First, process any pending `Inbox/multi-agents/*.md` task results (same logic as `/triage` Phase -1: read frontmatter + Result, present summary, convert Vault Updates Needed to agent staging files or apply directly, move to archive). Exclude `CLAUDE.md` and `archive/`. Log: `Processed N multi-agent results.`
-   - Auto-triage any pending `Inbox/` captures (match content against Maps, create Notes, update Maps — no confirmation; exclude `Inbox/multi-agents/`). After triage, archive each processed file to `Inbox/archive/`.
+   - Auto-triage any pending `Inbox/` captures (match content against Maps, create Notes, update Maps — no confirmation). After triage, archive each processed file to `Inbox/archive/`.
    - **Safety net**: glob for any `Inbox/*.md` files with `triaged: true` still in root — move them to `Inbox/archive/` (catches incomplete prior triage runs).
 
    #### Sense — Scan and Compute (script-delegated)

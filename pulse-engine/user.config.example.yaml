@@ -72,14 +72,3 @@ efforts:
 #   - name: Research
 #     shared_context: "Academic papers, data, analysis tools"
 #     mindset: "Investigative, deep-reading"
-
-
-# ── CODEBASE REGISTRY ────────────────────────────────────────────────────────
-# [INIT] Optional. Used by /dispatch to spin up sub-agents in project directories.
-# Add entries for any effort that has a local codebase.
-#
-# codebase_registry:
-#   - name: work
-#     path: /home/yourname/code/your-main-project
-#   - name: personal-project
-#     path: /home/yourname/code/my-side-project
