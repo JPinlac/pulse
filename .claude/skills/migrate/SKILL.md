@@ -71,7 +71,7 @@ Show the plan and ask for confirmation. Example:
 - Inbox: 0 captures
 - Sati: emergence-log.md
 
-**Efforts detected:** work, studia, dharma, relationships, zdrowie, maintenance, judo, prawo-jazdy, zew-cthulhu, personal
+**Efforts detected:** work, health, learning, relationships, projects, maintenance, hobby-1, hobby-2, personal
 
 **user.config.yaml:** will be synthesized from Map frontmatter (no existing config found)
 

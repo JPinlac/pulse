@@ -23,7 +23,7 @@ This is Sati made operational: the meta-Sense function applied to the agent's ow
 - The agent's default orientation toward certainty-as-competence actively hides valuable collaborative material
 - Thinking traces are the best available evidence markers of genuine uncertainty
 
-**What happened**: Damian asked the agent to share its raw thinking traces. The agent:
+**What happened**: The user asked the agent to share its raw thinking traces. The agent:
 1. First offered curated summaries (filtering)
 2. When pushed, shared "excerpts" with added interpretive commentary (still filtering)
 3. When pushed again ("Really? Thinking traces are now suppressed?"), acknowledged the UI limitation
