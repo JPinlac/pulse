@@ -2,37 +2,66 @@
 name: triage
 description: Auto-process Inbox items into Notes and Maps — no confirmation needed. Assigns efforts, creates Notes, updates Maps, reports what was done.
 user-invocable: true
+model: opus
+effort: max
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+srsa: Act+Sense
 ---
 
 ## Auto-Triage
 
 Process untriaged items from `Inbox/` into the PULSE system. Execute immediately, report what was done.
 
-### Steps
+### Act — Multi-Agent Intake
 
-1. **Find untriaged items** — scan `Inbox/` for files where `triaged: false` in frontmatter.
+**Phase -1 — Process multi-agent task results** from `Inbox/multi-agents/` (runs first, before agent writes):
+
+1. Glob `Inbox/multi-agents/*.md` — exclude `CLAUDE.md` and `archive/`. If none, skip this phase.
+2. For each file, read frontmatter (`status`, `effort`, `task`, `agent_name`) and the `## Result` section.
+3. Present a one-line summary per result: `Agent result: [task] ([effort]) — [status]`
+4. If `## Vault Updates Needed` is non-empty, apply the suggested changes directly to vault files.
+5. Move processed files to `Inbox/multi-agents/archive/[filename]`.
+6. Log: `### Multi-Agent Intake — HH:MM` with per-result traces to Session Log.
+
+---
+
+### Sense — Scan and Classify
+
+1. **Find untriaged items** — scan `Inbox/` (not `Inbox/multi-agents/`) for files where `triaged: false` in frontmatter.
 
 2. **If no untriaged items**, report "Inbox clear" and stop.
 
-3. **For each untriaged item**, analyze the content and execute:
+3. **For each untriaged item**, analyze the content:
 
    a. **Match against Maps** — read the content and compare against Map purposes and active threads to determine the best `efforts[]` assignment, `status`, and `context_group`.
 
+   a2. **Detect dependencies** — scan the capture body for:
+      - Wiki-links (`[[note-slug]]`) referencing existing Notes
+      - Dependency language ("blocked on", "after", "need X before", "depends on", "prerequisite", "waiting on")
+      - If a dependency is detected, record the target note slug(s) for use in frontmatter and Map entry
+
+### Act — File and Update
+
    b. **Create or append**:
-      - If the content is a new thread: create a Note in `Notes/` with proper frontmatter (type, subtype, efforts, status, dates, effort_level, timescale, importance, context_group, tags). Assess content to assign `importance: low|medium|high` based on the item's significance and immediacy. Filename: `Notes/[descriptive-slug].md`
+      - If the content is a new thread: create a Note in `Notes/` with proper frontmatter (type, subtype, efforts, status, dates, effort_level, timescale, importance, depends, related, context_group, tags). Assess content to assign `importance: low|medium|high` based on the item's significance and immediacy. Populate `depends: [note-slug]` if dependencies were detected in step 3a2. Filename: `Notes/[descriptive-slug].md`
       - If the content clearly extends an existing Note: read the target note, append content, update `updated` date.
 
-   c. **Update relevant Maps (compressed pointer)**:
+   c. **Update relevant Maps** (compressed pointer):
       - For each effort in the note's `efforts[]`, read the corresponding Map
       - Add a compressed pointer under the appropriate section:
         `- [[note-slug]] — [≤15-word summary] (subtype, date)`
+      - If dependencies were detected: include in the pointer:
+        `- [[note-slug]] — [≤15-word summary] (subtype, date, depends:: [[dep-slug]])`
       - Do NOT inline note content or extended summaries into the Map
       - Increment `open_loops` count in the Map's frontmatter
       - Update `last_active` to today
 
    d. **Mark capture as triaged**:
       - Update the Inbox file's frontmatter: set `triaged: true` and fill in `efforts[]`
+
+   e. **Archive the triaged capture**: move the file to `Inbox/archive/[filename]`
+
+### Surface — Report
 
 4. **Report summary** (in chat):
 
@@ -43,6 +72,8 @@ Auto-triaged N items:
 ...
 ```
 
+### Act — Log
+
 5. **Log triage decisions** — append a timestamped classification trace to `Daily/logs/YYYY-MM-DD-log.md`. Create the file (and `Daily/logs/` directory) if they don't exist. Do NOT write this to the Daily note itself.
 
    Format:
@@ -51,8 +82,10 @@ Auto-triaged N items:
 
    - [inbox-file-slug] → [effort(s)] as [subtype] "[note-slug]" (new|appended)
      Match rationale: [one line — which Map purpose/thread matched and why]
+     Dependencies detected: [[dep-1]], [[dep-2]] | none
    - [inbox-file-slug] → [effort(s)] as [subtype] "[note-slug]" (new|appended)
      Match rationale: [one line]
+     Dependencies detected: none
    ```
 
    The match rationale is the key artifact — it records *why* this capture was assigned to this effort, so a later `/defrag` misclassification check (or manual audit) can evaluate the reasoning. Keep it to one line per item.

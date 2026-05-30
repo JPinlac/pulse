@@ -2,7 +2,10 @@
 name: close
 description: Session-close ritual — reflect on what happened, what emerged, what patterns are forming. Flags items needing attention, then auto-triggers /defrag.
 user-invocable: true
+model: opus
+effort: max
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+srsa: Surface+Sense+Act
 ---
 
 ## Session Close
@@ -15,17 +18,24 @@ If $ARGUMENTS contains `q` or `quick`, run a lightweight save-state (use before 
 1. Skip steps 2–5 (no reflection narrative, no flags, no human prompts)
 2. Run step 6.5 (inline recompute — captures current state)
 3. Run step 7 (update Daily note — items_completed/deferred, efforts_touched)
-4. Run step 8 as **light defrag only** (not full)
+4. **Light defrag (mandatory — do NOT skip)** — this is Sense that must always execute:
+   a. Auto-triage Inbox — process any `Inbox/` items where `triaged: false`, archive to `Inbox/archive/`
+   b. Reconcile Map counts — for each touched effort, verify `open_loops` = active/waiting Notes + unchecked Minor Actions. Fix mismatches.
+   c. Flag stale Maps — flag any Map where `last_active` exceeds its staleness threshold
+   d. Scan Minor Actions — check for overdue unchecked items in touched efforts
+   e. Log to `Daily/logs/YYYY-MM-DD-log.md`: `### Defrag — HH:MM light` with triage count, reconciliation changes, stale flags, overdue count
 5. Set `last_refreshed: HH:MM` in today's Daily note frontmatter — do NOT set `close_complete: true` (checkpoint, not session end)
 6. Respond: `State saved. Context is clear to start fresh.`
 
 Total: ~2 turns. The `last_refreshed` timestamp tells the next `/pulse` that state is fresh — it will skip the inline refresh (or run triage-only if new inbox items arrived). No ceremony required.
 
-### Steps
+### Sense — Gather Context
 
 1. **Read today's Daily note** (`Daily/YYYY-MM-DD.md`). If none exists, check what Maps were touched today by looking at `last_active` dates.
 
 2. **Read relevant Maps and Notes** — gather context on what moved today across all active efforts.
+
+### Dyad Surface — Reflect Together
 
 3. **Present a reflection narrative**:
 
@@ -45,24 +55,22 @@ The unplanned stuff — often the most valuable signal.]
 Only include if genuinely noticed — don't fabricate patterns.]
 ```
 
+### Route — Flag What Needs Attention
+
 4. **Flag items needing human attention** — only surface things that genuinely need a decision:
    - Items deferred 3+ times (pattern of avoidance — worth naming)
    - Efforts that went dark (active Notes past their timescale staleness window with no status change)
    - Cross-effort tensions (competing priorities that can't both win)
    - Anything that seems stuck or misaligned with stated goals
+   - **Newly unblocked** — items whose dependencies were completed today: "Newly unblocked: [[note]] — dependency [[dep]] completed today. This is now actionable."
 
 5. **Invite reflection** — "Anything else on your mind before I clean up?" This is optional. If the user has nothing to add, move on.
 
+### Act — Honor, Recompute, File
+
 6. **If the user volunteers status changes** during the reflection conversation (e.g., "that thing is done" or "drop that one"), apply them. But don't prompt for decisions on each item.
 
-6.5. **Session-end recompute** — run the /recompute formula inline to capture today's activity:
-   - Recency from today's work (efforts_touched in Daily Note)
-   - Completed items reduce open_loops, may reduce urgency
-   - New urgency signals from items that emerged during the session
-   - Minor Actions scanning (overdue items, newly added items)
-   - Apply calibration adjustments from `Notes/pulse-priority-calibration.md`
-   - Update Map weights in frontmatter
-   - Log updated weight table to `Daily/logs/YYYY-MM-DD-log.md` (ensures next session starts from accurate baseline)
+6.5. **Session-end recompute** — run `uv run pulse-engine/scripts/pulse-calc.py --vault "${PULSE_VAULT:-./pulse-vault}" --briefing --cache "${PULSE_VAULT:-./pulse-vault}/Daily/cache/$(date +%Y-%m-%d)-calc.json"` to capture today's activity in a fresh cache. Update Map frontmatter weights from the output. Log weight table to `Daily/logs/YYYY-MM-DD-log.md`.
 
 7. **Update the Daily note** — fill in the `## End of Day` section with the reflection summary. Update `items_completed` and `items_deferred` counts, finalize `efforts_touched`.
 
@@ -71,6 +79,8 @@ Only include if genuinely noticed — don't fabricate patterns.]
 8.5. **Set freshness + close flag** — after successful defrag + recompute:
    - Set `last_refreshed: HH:MM` in today's Daily note frontmatter (gates `/pulse` inline refresh skip)
    - Set `close_complete: true` (signals a **full** defrag ran — `/pulse` can skip deeper checks like misclassification scan and merge candidate detection beyond what `last_refreshed` alone gates)
+
+### Surface — Close with Warmth
 
 9. **Close with warmth** — after defrag completes, deliver a brief closing message:
 
@@ -88,6 +98,10 @@ Everything is filed. [If no due items remain open: "Your priority items are in g
    - **Warm but not saccharine** — earned praise, not flattery
    - **Honest** — don't offer false reassurance if due items are still open; acknowledge them and affirm they're tracked
    - **Permissive** — explicit "it's okay to let go" framing only when the slate is genuinely clear
+
+### Sub-Agent Policy
+
+All sub-agents spawned during `/close` (recompute delegation, Daily note writes, defrag file operations) MUST use `model: "opus"` on the Agent tool call. Minimum across all PULSE sub-agents is sonnet; close sub-agents use opus for full reasoning fidelity.
 
 ### Principles
 - **This is reflective, not bureaucratic.** No "defer/wait/done/drop?" loops.

@@ -2,8 +2,11 @@
 name: focus
 description: Enter deep flow on a specific effort — inspiration override. Loads the relevant Map, shows active threads, and logs the context switch. Use for deep focus on a single effort, not for general agenda setting.
 user-invocable: true
+model: opus
+effort: max
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: <effort name>
+srsa: Surface
 ---
 
 ## Focus — Deep Flow Override
@@ -13,11 +16,13 @@ The user wants to focus on a specific effort. Pivot immediately — no friction,
 ### Input
 Target effort: $ARGUMENTS
 
-### Steps
+### Sense
 
 1. **Resolve the effort** — match $ARGUMENTS flexibly against effort names, slugs, and aliases (case-insensitive, partial match). If ambiguous, ask.
 
 2. **Load the Map** — read the full Map file for the target effort.
+
+### Surface
 
 3. **Show the effort context**:
 
@@ -35,6 +40,8 @@ Target effort: $ARGUMENTS
 
 ### What do you want to work on?
 ```
+
+### Act
 
 4. **Log the context switch** in today's Daily note (create one if it doesn't exist):
    - Add the effort to `efforts_touched[]` in frontmatter
