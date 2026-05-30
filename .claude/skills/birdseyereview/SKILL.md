@@ -2,7 +2,10 @@
 name: birdseyereview
 description: Full landscape audit — scans all Maps with zero suppression. Use for periodic reviews, not daily agenda setting.
 user-invocable: true
+model: opus
+effort: max
 allowed-tools: Read, Glob, Grep, Edit, Write
+srsa: Sense+Surface
 ---
 
 ## Bird's-Eye Review
@@ -11,15 +14,21 @@ Full audit of the vault landscape. Shows every effort with zero suppression — 
 
 ### If no daily note exists for today:
 
+#### Sense
+
 1. **Scan all Maps** in `Maps/` — read each file to find open loops, active threads, and items with deadlines.
 
 2. **Scan active Notes** — find notes in `Notes/` where `status: active` or `status: waiting`, especially those with `due` dates approaching.
+
+#### Route — ordering only, no suppression
 
 3. **Group by context batch** to minimize context switching.
 
 4. **Sort batches** by combined `priority_weight` of their efforts (highest batch first).
 
 5. **Within each batch**, sort items by individual effort priority weight.
+
+#### Surface
 
 6. **Generate the Daily note** using the template structure:
 
@@ -53,9 +62,13 @@ items_deferred: 0
 ## End of Day
 ```
 
+#### Act
+
 7. **Write the file** to `Daily/YYYY-MM-DD.md`.
 
 ### If a daily note already exists:
+
+This path is pure Surface — show progress and invite adjustment.
 
 1. Read the existing daily note.
 2. Show current progress — how many items checked vs total.

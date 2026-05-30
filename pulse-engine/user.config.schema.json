@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PULSE User Configuration",
+  "description": "Defines the user's effort set, context batches, and optional codebase registry for /dispatch.",
+  "type": "object",
+  "required": ["efforts"],
+  "additionalProperties": false,
+  "properties": {
+    "efforts": {
+      "type": "array",
+      "description": "List of user effort definitions. Each effort maps to one Map file in pulse-vault/Maps/.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["slug", "batch", "base_priority", "purpose"],
+        "additionalProperties": false,
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique kebab-case identifier. Used in Note frontmatter, skill arguments, and Map filenames.",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "not": {
+              "enum": ["pulse"],
+              "description": "'pulse' is reserved for the engine's system Map. Use a different slug."
+            }
+          },
+          "batch": {
+            "type": "string",
+            "description": "Context batch this effort belongs to. Must match a batch name in the 'batches' array, or one of the default batches: Work, Projects, Maintenance, Leisure."
+          },
+          "base_priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Life-importance anchor (1=lowest, 10=highest). Changes rarely — only when life circumstances shift. This seeds the priority formula but does not determine final ranking."
+          },
+          "purpose": {
+            "type": "string",
+            "description": "One-sentence description of what this effort is about. Used by the agent for /triage classification and /focus context loading.",
+            "maxLength": 200
+          },
+          "aliases": {
+            "type": "array",
+            "description": "Alternative names for this effort. Used by /focus for flexible slug matching.",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          }
+        }
+      }
+    },
+    "batches": {
+      "type": "array",
+      "description": "Optional. Override or extend the default batch set. Default batches: Work, Projects, Maintenance, Leisure.",
+      "items": {
+        "type": "object",
+        "required": ["name", "shared_context", "mindset"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique batch name. Referenced by effort 'batch' field."
+          },
+          "shared_context": {
+            "type": "string",
+            "description": "The shared problem domain — tools, environment, stakeholders. Primary grouping signal (domain switching is expensive)."
+          },
+          "mindset": {
+            "type": "string",
+            "description": "The cognitive mode for this batch. Secondary grouping signal."
+          }
+        }
+      }
+    },
+    "codebase_registry": {
+      "type": "array",
+      "description": "Optional. Maps effort slugs (or project names) to their local codebase directories. Used by /dispatch to set up git worktrees for sub-agents.",
+      "items": {
+        "type": "object",
+        "required": ["name", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Effort slug or project name. Matched against the /dispatch argument."
+          },
+          "path": {
+            "type": "string",
+            "description": "Absolute path to the project directory on this machine."
+          }
+        }
+      }
+    }
+  }
+}

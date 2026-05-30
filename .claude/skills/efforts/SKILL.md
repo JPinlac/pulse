@@ -2,15 +2,18 @@
 name: efforts
 description: Manage effort lifecycle — add, splinter, merge, review, and bootstrap efforts. Use when defining new efforts, splitting complex ones, or auditing effort health.
 user-invocable: true
+model: opus
+effort: max
 allowed-tools: Read, Glob, Grep, Edit, Write, Bash
 argument-hint: [add | splinter <slug> | merge <slug> <slug> | review]
+srsa: Act (Dyad)
 ---
 
 ## Effort Lifecycle Management
 
-You manage the Maps that define efforts for PULSE. Maps are the sole source of truth for effort definitions.
+You manage the Maps that define efforts for PULSE. Maps are the sole source of truth for effort definitions. This skill is Dyad Act — system evolution that neither node can do alone.
 
-### Parse Intent
+### Sense — Parse Intent
 
 Read `$ARGUMENTS` to determine the action:
 
@@ -22,34 +25,47 @@ Read `$ARGUMENTS` to determine the action:
 
 ---
 
-### Bootstrap
+### Act — Bootstrap
 
-If `Maps/` contains no `.md` files when any action is attempted:
+When `Maps/` has no user Maps (only `[INIT]` templates, `_system/`, or is empty):
 
-1. Ask the user about their life: "What are the major areas you spend your time and attention on?" Let them describe freely.
-2. From their description, generate tailored efforts (aim for 3-5). For each, propose a name, slug, one-line purpose, `base_priority`, `context_batch`, and aliases.
-3. Present the proposed efforts for confirmation. Let the user adjust before committing.
-4. If the user would rather skip the conversation: "Or if you'd rather just get started, I can set up 3 universal defaults — **Work**, **Life Maintenance**, and **Personal Projects** — and you can customize later with `/efforts`."
-5. Create Maps in `Maps/` with full frontmatter (including purpose and aliases)
-6. Run the Sync Slug Table procedure
-7. After bootstrap, proceed with the originally requested action (or `/pulse` if they came from there)
+0. **Ensure vault directory structure exists** — create any missing directories before proceeding:
+   ```bash
+   mkdir -p "${PULSE_VAULT:-./pulse-vault}/Maps/_system"
+   mkdir -p "${PULSE_VAULT:-./pulse-vault}/Notes/archive"
+   mkdir -p "${PULSE_VAULT:-./pulse-vault}/Daily/logs"
+   mkdir -p "${PULSE_VAULT:-./pulse-vault}/Daily/cache"
+   mkdir -p "${PULSE_VAULT:-./pulse-vault}/Inbox/multi-agents"
+   mkdir -p "${PULSE_VAULT:-./pulse-vault}/Sati"
+   ```
+   Also create `pulse-vault/Maps/.keep` (empty sentinel) and `pulse-vault/Sati/emergence-log.md` if absent.
+
+1. **Check `pulse-vault/user.config.yaml`** — if it exists and has `efforts:` entries, read them.
+   - If config is populated: generate Maps from each effort entry using the Map template. For each effort:
+     - Create `pulse-vault/Maps/<EffortName>.md` from `pulse-engine/templates/Map.md`
+     - Set frontmatter: `effort`, `context_batch`, `base_priority`, `purpose`, `aliases` from config
+     - Remove any `[INIT]` template Maps that conflict with newly generated ones
+   - If config is empty or missing: **ask the user conversationally** — say "Welcome to PULSE! Let's set up your vault. What are the main areas of your life you're actively managing? A few examples: work, health, a relationship, a side project, a learning path — but name what's actually true for you. Aim for 3–7." Then generate Maps AND write the effort definitions back to `pulse-vault/user.config.yaml`. The user never manually writes config.
+2. Report what was generated
+3. After bootstrap, proceed with the originally requested action (or `/pulse` if they came from there)
 
 ---
 
-### Sync Slug Table
+### Act — Sync user.config.yaml
 
-After any mutation to Maps (add, splinter, merge, bootstrap), update the slug cache in root `CLAUDE.md`:
+After any mutation to Maps (add, splinter, merge, bootstrap), keep `pulse-vault/user.config.yaml` in sync:
 
-1. Read all Maps in `Maps/` for the current active effort list (from frontmatter)
-2. Find the block between `<!-- SLUG-TABLE-START` and `<!-- SLUG-TABLE-END -->`
-3. Replace with a fresh table: columns `Slug`, `Batch`, `Aliases`; sorted by batch (alpha) then base_priority desc; skip archived efforts
-4. If sentinels don't exist in `CLAUDE.md`, insert the full block under `## Efforts & Slugs`
+1. Read all non-archived Maps in `pulse-vault/Maps/` (excluding `_system/`) for the current effort list
+2. Read existing `pulse-vault/user.config.yaml`
+3. For each Map not yet in the config: add an entry under `efforts:` with `slug`, `batch`, `base_priority`, `purpose`, `aliases`
+4. For each config entry whose Map is now archived: mark it as `archived: true` (or remove)
+5. Write the updated config back
 
-Self-healing — any mutation auto-corrects drift.
+Self-healing — any mutation auto-corrects drift between Maps and config.
 
 ---
 
-### Status (default)
+### Sense + Surface — Status (default)
 
 1. Read all Maps in `Maps/` — get `effort`, `context_batch`, `base_priority`, `priority_weight`, `open_loops`, `last_active`, `purpose` from frontmatter
 2. Present:
@@ -64,14 +80,13 @@ Self-healing — any mutation auto-corrects drift.
 [N] efforts across [N] batches.
 ```
 
-3. **If all efforts are still defaults** (only `work`, `maintenance`, `personal-projects` exist and none have been modified — 0 open loops, no threads): prompt the user to customize. Run the same conversational flow as Bootstrap step 1-3 — ask about their life, propose tailored efforts, let them adjust. Replace or augment the defaults based on what they describe.
-4. Otherwise, end with: "Use `/efforts add`, `/efforts splinter <slug>`, `/efforts merge <slug> <slug>`, or `/efforts review`."
+3. End with: "Use `/efforts add`, `/efforts splinter <slug>`, `/efforts merge <slug> <slug>`, or `/efforts review`."
 
 ---
 
-### Add
+### Dyad Route + Act — Add
 
-Before creating a new effort, apply the **Effort Litmus Test**. Present these questions conversationally:
+Before creating a new effort, apply the **Effort Litmus Test**. This is Route — the litmus test gates whether a new effort is warranted or whether this belongs as a thread in an existing Map. Present these questions conversationally:
 
 1. **Duration** — Will this persist for months? If it'll be done in weeks, it's a thread within an existing effort.
 2. **Context switch** — Does working on this require a different mental model than any existing effort? If you can do it in the same headspace, it's a thread.
@@ -84,16 +99,16 @@ If the litmus test passes:
 1. Ask for: name, one-line purpose, aliases
 2. Suggest a slug (user confirms)
 3. Suggest a `base_priority` based on their description (user confirms)
-4. Assign to an existing `context_batch`. Creating a new batch is fine if the existing ones genuinely don't fit — the user knows their cognitive landscape better than the system does. If a new batch is created, add it to the context batches table in `CLAUDE.md`.
+4. Assign to an existing `context_batch`. Creating a new batch is fine if the existing ones genuinely don't fit — the user knows their cognitive landscape better than the system does. If a new batch is created, add it to `pulse-vault/user.config.yaml` under `batches:`.
 5. Create the Map in `Maps/` using the Map template frontmatter (including `purpose` and `aliases`)
 6. Report what was created
 7. Run the Sync Slug Table procedure
 
 ---
 
-### Splinter
+### Dyad Surface + Act — Splinter
 
-Splitting an effort that has grown too complex into sub-efforts.
+Splitting an effort that has grown too complex into sub-efforts. The conversation here is Surface — the dyad evaluates which threads genuinely require different mental contexts.
 
 1. Read the target effort's Map — list all active threads
 2. Ask: "Which of these feel like genuinely different mental contexts?"
@@ -111,7 +126,7 @@ Splitting an effort that has grown too complex into sub-efforts.
 
 ---
 
-### Merge
+### Act — Merge
 
 Combining two efforts that have converged or where one has become redundant.
 
@@ -125,7 +140,7 @@ Combining two efforts that have converged or where one has become redundant.
 
 ---
 
-### Review
+### Sense + Surface — Review
 
 Audit all efforts for health signals. Read all Maps, then report:
 
@@ -142,7 +157,7 @@ Present findings conversationally. Don't auto-fix — let the user decide.
 These are quality signals, not hard rules. Surface them during `add` and `splinter` when relevant:
 
 - **Every effort needs a unique purpose.** If you can't articulate how it's different from an existing effort in one sentence, it's probably a thread within that effort.
-- **Efforts are durable.** They represent persistent life domains (months to years), not projects (weeks). A project is a thread within an effort.
+- **Efforts are durable.** They represent persistent life commitments (months to years), not projects (weeks). A project is a thread within an effort.
 - **Batches absorb complexity.** Before splintering, check whether better thread organization within an existing Map solves the problem.
 - **New efforts inherit their parent's `context_batch`** unless the user explicitly wants a new batch. New batches are fine — just confirm intent.
 
