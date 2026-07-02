@@ -101,7 +101,7 @@ Everything is filed. [If no due items remain open: "Your priority items are in g
 
 ### Sub-Agent Policy
 
-Writes are inline (main session) by default — Daily note writes and session-log appends are single-file ops, written inline. `/close` already runs inline (it has `Write`/`Edit`, no Agent tool). If a heavy batch is delegated to a **foreground** sub-agent (e.g. the auto-triggered `/defrag` full pass), that sub-agent MUST use `model: "opus"` (floor sonnet across all PULSE sub-agents). Never delegate a write to a background sub-agent (read-only).
+Small single-file writes (Daily note updates, session-log appends) stay inline — `/close` runs these directly in the main session. The auto-triggered `/defrag` full pass — the heavy multi-file batch — dispatches to a **background** sub-agent (`model: "opus"`) so it doesn't block the close ritual. Background sub-agents can write as of Claude Code v2.1.186+ (earlier versions denied `Write`/`Edit` in the detached background context — see the Silent File Operations section of `CLAUDE.md`).
 
 ### Principles
 - **This is reflective, not bureaucratic.** No "defer/wait/done/drop?" loops.
