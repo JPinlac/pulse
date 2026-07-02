@@ -118,7 +118,7 @@ _Resurfacing: [note title] ([effort], monthly — 27 days since last touch)_
 ### What would you like to work on?
 ```
 
-**Write policy**: Writes are inline (main session) by default — session log writes and calibration corrections are single-file ops, written inline. Only the Phase E Map+INDEX rewrite (heavy multi-file batch) may be delegated to a **foreground** sub-agent; if it is, that sub-agent MUST use `model: "opus"`. Never delegate any write to a background sub-agent (they are read-only).
+**Write policy**: Session log writes and calibration corrections are single-file ops, written inline. The Phase E Map+INDEX rewrite (heavy multi-file batch) dispatches to a **background** sub-agent (`model: "opus"`) so it doesn't block the briefing. Background sub-agents can write as of Claude Code v2.1.186+ (earlier versions denied `Write`/`Edit` in the detached background context — see the Silent File Operations section of `CLAUDE.md`).
 
 **Note loading constraint**: Do not speculatively read Notes during /pulse. Map entry summaries and Minor Actions inline text are the primary sources for Important Items. Only read a specific Note if its effective_item_score places it in the top 3 of Important Items AND the Map summary is insufficient to describe the item. Never read Notes for lower-ranked items or for general context-building.
 
