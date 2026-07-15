@@ -9,6 +9,8 @@ argument-hint: <effort name>
 srsa: Surface
 ---
 
+> **DEPRECATED (2026-07-05):** The graph-native `focus` CLI command was dropped by dyad decision (the user confirmed they don't use it). This file-based `/focus` skill is retained but effectively unused — kept as the fallback if the capability is ever wanted again.
+
 ## Focus — Deep Flow Override
 
 The user wants to focus on a specific effort. Pivot immediately — no friction, no "but your schedule says..."

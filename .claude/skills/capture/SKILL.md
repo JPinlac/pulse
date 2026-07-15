@@ -4,7 +4,7 @@ description: Quick capture a thought, idea, or task into the Inbox. Zero frictio
 user-invocable: true
 model: sonnet
 effort: medium
-allowed-tools: Read, Write
+allowed-tools: Read, Write, Agent
 argument-hint: "[q] <your thought or idea>"
 srsa: Act
 ---
@@ -13,7 +13,7 @@ srsa: Act
 
 Capture whatever the user says into the Inbox with zero friction.
 
-**IMPORTANT**: Write the capture **inline** from the main session — it is lightweight (context extraction + one file write). Do NOT delegate to a background sub-agent: background agents are denied `Write`/`Edit`, so a delegated capture silently fails to file.
+**IMPORTANT**: Dispatch the file write to a **background** sub-agent (`run_in_background: true`, sonnet floor) — fire-and-forget, confirm to the user immediately without waiting on it. Background sub-agents can write as of Claude Code v2.1.186+ (earlier versions denied `Write`/`Edit` in the detached background context, causing a delegated capture to silently fail to file — see the Silent File Operations section of `CLAUDE.md`). If a capture ever silently fails to appear in `Inbox/` on a later `/pulse`/`/triage` pass, that's a possible sign of an older Claude Code build or a regression — fall back to inline.
 
 ### Modes
 
@@ -39,7 +39,7 @@ Package this as a `## Conversational Context` block to include in the capture fi
 
 ### Act
 
-**Step 2 — Write inline** — using the Write tool (main session), create the capture file in `Inbox/` to this spec:
+**Step 2 — Dispatch the write** — spawn a background sub-agent (`run_in_background: true`, sonnet floor) to create the capture file in `Inbox/` to this spec. Do not wait for it to finish:
 
 > Create a capture file in `Inbox/` with these specs:
 > - Filename: `Inbox/YYYY-MM-DD-[short-slug].md` (use today's date)
@@ -74,11 +74,11 @@ Package this as a `## Conversational Context` block to include in the capture fi
 
 ### Surface
 
-**Step 3 — Confirm** — after the inline write completes (near-instant), report: "Captured: [title]. Auto-triage will pick it up at next `/pulse` or `/triage`."
+**Step 3 — Confirm** — report immediately, without waiting on the background write to finish: "Captured: [title]. Auto-triage will pick it up at next `/pulse` or `/triage`."
 
 ### Principles
 - **Verbatim capture** — the user's words are the artifact. Do not expand, interpret, or reframe. The value-add is the Conversational Context section, not content modification. Triage runs later without conversation access — context preserves what triage needs; verbatim preserves what the user said.
-- **Minimal disruption** — context extraction + one inline write is lightweight; capture, confirm in one line, and return to the conversation. Don't narrate the file write.
+- **Minimal disruption** — context extraction is lightweight; dispatch the write, confirm in one line, and return to the conversation immediately. Don't narrate the file write or wait on it.
 - **Context-aware by default** — conversational context is perishable; capture it now so triage has full signal later
 - Speed over perfection — get it captured first, auto-triage files it later
 - Don't over-interpret. Capture what was said, don't force-fit into efforts yet. Context is informational, not prescriptive.

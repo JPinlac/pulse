@@ -175,8 +175,8 @@ Optional dependency: `- [ ] Item description (importance: medium, depends:: [[no
 
 ### Capture Flow
 1. Extract conversational context inline (active efforts, recent topics, likely deps)
-2. Write the `.md` to `Inbox/` inline (main session) with capture frontmatter — near-instant, no agent spawn
-3. Confirm: `Captured: [title].`
+2. Dispatch a **background** sub-agent (`run_in_background: true`, sonnet floor) to write the `.md` to `Inbox/` with capture frontmatter — fire-and-forget, main session doesn't wait on it
+3. Confirm immediately: `Captured: [title].`
 4. Auto-triage picks it up at next `/pulse` or `/triage` — no human confirmation needed
 5. `/defrag` catches any misclassifications later
 
@@ -184,21 +184,23 @@ Optional dependency: `- [ ] Item description (importance: medium, depends:: [[no
 Low-value batches are soft-suppressed in `/pulse` output. Important Items are ranked by `effective_item_score` (algorithm-derived), not by importance tier — importance is a soft seed, not a display gate. `/birdseyereview` provides a full unsuppressed landscape audit when needed. Suppressed batches and low-signal efforts (0 loops, stale, no deadlines) are folded — say "unfold" for the full landscape.
 
 ### Silent File Operations
-All file writes (Daily Notes, Session Logs, Map updates, triage results, captures) are performed **inline by the main session by default**. The main conversation should only display human-readable output (briefings, confirmations, summaries) — "silent" means the *output* is clean, not that the write is offloaded. Delegate a write to a **foreground** sub-agent only for genuinely heavy multi-file batches (full `/defrag` pass, `/pulse` Phase E Map+INDEX rewrite) where context isolation pays for the spawn cost.
+Background sub-agents are the **default writers** for vault operations — dispatch async (`run_in_background: true`) so the main conversation never blocks on file I/O and stays purely conversational. Writes (Daily Notes, Session Logs, Map updates, triage results, captures) file themselves while the dyad keeps talking.
 
-**Background sub-agents cannot write** — `Write`/`Edit` are denied in the detached background permission context (local `allow` rules are not honored there). **Never delegate a write to a background sub-agent.** Background sub-agents are valid only for **read-only** work (e.g. Sati observation); their findings are written back inline by the main session.
+**Background sub-agents can write** as of Claude Code v2.1.186+ — earlier versions denied `Write`/`Edit` in the detached background permission context (local `allow` rules weren't honored there), which forced an inline-only convention. That limitation is resolved upstream; if you're on an older Claude Code build, verify with a small probe (background-dispatch a trivial file write and confirm it lands) before relying on background writes, and fall back to inline (main session) or a **foreground** sub-agent if it's still denied.
+
+**Judgment call, not a blanket mandate**: dispatching a sub-agent has real token overhead (observed: tens of thousands of tokens even for a handful of tool calls) — worth it for anything that would otherwise cost conversational attention (heavy multi-file batches, multi-step writes, anything the user doesn't need to watch happen in real time). For a single trivial one-line edit where the spawn cost clearly exceeds the value, inline remains fine. When genuinely in doubt, dispatch — background is the default; inline is the judgment-call exception, not the reverse.
 
 **Files mutate; the audit appends.** Whoever writes may overwrite the file it's changing (current-state is mutable), but every material change is *also* appended to that day's Session Log (`Daily/logs/`) — PULSE's append-only changelog (see Session Log section). The file edit can overwrite; the changelog entry only ever appends.
 
 #### Sub-Agent Model Policy
-Governs **foreground** sub-agents (heavy batches) and read-only background observers — writes are inline by default, so this applies whenever a sub-agent *is* spawned.
+Governs every sub-agent — foreground and background alike now write, so this applies whenever a sub-agent *is* spawned.
 - **Floor**: sonnet. No sub-agent runs below sonnet.
-- **pulse, close, defrag**: opus. These are core PULSE operations — trust first, optimize later. (`capture` no longer spawns an agent — it writes inline.)
+- **pulse, close, defrag**: opus. These are core PULSE operations — trust first, optimize later.
 - **Agent tool calls**: specify `model: "opus"` (or `model: "sonnet"` for non-core) explicitly on every Agent tool invocation. Do not rely on inheritance.
 
 #### Agent Classification
-- **Foreground sub-agents** (Agent tool, synchronous): spawned within the current session, run on the main checkout, inherit the live permission context. Write directly to vault files (Maps, Notes, Daily, etc.). Reserved for heavy batches.
-- **Background sub-agents** (Agent tool, `run_in_background: true`): **read-only** — `Write`/`Edit` are denied in the detached permission context. Use for read/analysis fan-out only (e.g. Sati observation); never for writes.
+- **Foreground sub-agents** (Agent tool, synchronous): spawned within the current session, run on the main checkout, inherit the live permission context. Blocks the conversation until done. Use when the write's result is needed back synchronously, in the same turn, before proceeding.
+- **Background sub-agents** (Agent tool, `run_in_background: true`): run on the main checkout without blocking the conversation. **Can write** (Claude Code v2.1.186+) and are the **default dispatch target** for vault writes — Map updates, Session Log appends, captures, triage, heavy `/defrag`/`/pulse` batches. Also valid for read-only fan-out (e.g. Sati observation) when no write is needed.
 
 ### Inspiration Override
 When the user shifts topic, immediately pivot. Log the context switch in daily note. Adjust weights. The system adapts to the user, not the other way around.

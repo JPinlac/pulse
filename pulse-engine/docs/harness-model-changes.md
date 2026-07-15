@@ -5,7 +5,7 @@ efforts: [pulse]
 status: active
 importance: medium
 created: 2026-05-12
-updated: 2026-05-12
+updated: 2026-07-02
 informs: [[pulse-execution-modes]], [[pulse-mao-multi-agent-orchestration]], [[pulse-agent-hook-traceability]]
 tags: [meta, harness, claude-code, tooling]
 ---
@@ -37,15 +37,16 @@ Harness updated; workflow noticeably changed. Specific shifts not yet enumerated
 
 ## What to watch
 
-- **Sub-agent write permissions** — open Minor Action in pulse Map flags sub-agents denied Write/Edit; harness updates may resolve or worsen this. If sub-agent permissions changed, the MAO inter-agent boundary needs re-checking.
+- **Sub-agent write permissions** — **RESOLVED as of Claude Code v2.1.186.** Background sub-agents were denied `Write`/`Edit` in the detached background permission context on earlier harness versions (local `allow` rules weren't honored there). Claude Code's own docs now confirm the mechanism directly: "Before v2.1.186, background subagents auto-denied any tool call that would have prompted" — now the prompt surfaces for approval instead of auto-denying. Re-verified empirically (background-dispatched write succeeded where it previously failed). Full writeup: [[pulse-background-agent-write-permissions]]. **This has already flipped once (denied → allowed) — treat it as re-verifiable, not permanently guaranteed.** If you're on an older Claude Code build or see a background write silently fail, re-run the probe in that doc before trusting background writes.
 - **Hook firing timing and payload** — `/close`, `/defrag`, and Stop-hook patterns depend on specific firing semantics.
 - **Tool batching and parallel call behavior** — PULSE relies heavily on parallel tool calls for file ops; any throttling or serialization changes would slow `/defrag` and `/triage`.
 - **Context management** — auto-compaction triggers, system-reminder cadence, prompt cache TTL (the `ScheduleWakeup` tool description notes a 5-minute cache TTL, useful constraint to remember).
 - **Skill triggering** — what auto-fires vs what requires explicit `/<name>` invocation. The `Skill` tool's instructions are explicit that skills should not be guessed; this constrains how PULSE can hand off across skills.
-- **Background sub-agents** — the `run_in_background` parameter on Agent and Bash tools; PULSE's silent file ops convention assumes this is available and reliable.
+- **Background sub-agents** — the `run_in_background` parameter on Agent and Bash tools. Confirmed available and reliable for writes as of Claude Code v2.1.186+ (see above); PULSE's Silent File Operations convention now dispatches to background sub-agents by default.
 
 ## Informs
 
 - [[pulse-execution-modes]] — hook/sub-agent/main-flow execution patterns are defined by harness semantics; shifts here cascade into SRSA function placement
 - [[pulse-mao-multi-agent-orchestration]] — sub-agent vs dispatched-agent capability boundaries are harness-defined; permission changes change the boundary
 - [[pulse-agent-hook-traceability]] — trace persistence depends on what the harness surfaces about sub-agent and hook activity
+- [[pulse-background-agent-write-permissions]] — full investigation, probe methodology, and resolution for the sub-agent write-permission finding above
