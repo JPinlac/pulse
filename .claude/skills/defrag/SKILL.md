@@ -162,7 +162,7 @@ Run everything in the light pass, plus:
 
 ### Sub-Agent Policy
 
-`/defrag` writes inline (main session — it has `Write`/`Edit`, no Agent tool): file writes, INDEX updates, and archive moves all run inline. The full defrag pass *is* the canonical heavy multi-file batch; if any sub-batch is delegated to a **foreground** sub-agent, that sub-agent MUST use `model: "opus"` (floor sonnet across all PULSE sub-agents). Never delegate a write to a background sub-agent (read-only).
+The full defrag pass is the canonical heavy multi-file batch — the orchestrating session dispatches it to a **background** sub-agent (`run_in_background: true`, `model: "opus"`) so the reconciliation sweep doesn't block the conversation. Background sub-agents can write as of Claude Code v2.1.186+ (earlier versions denied `Write`/`Edit` in the detached background context — see the Silent File Operations section of `CLAUDE.md`). Foreground remains an option when the result is needed back synchronously this turn, or on older Claude Code builds where background writes aren't yet confirmed working.
 
 ### Principles
 
