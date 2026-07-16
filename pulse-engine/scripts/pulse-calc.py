@@ -14,6 +14,7 @@ import argparse
 import json
 import os
 import re
+import statistics
 import sys
 from dataclasses import dataclass, field, asdict
 from datetime import date, datetime, timedelta
@@ -60,6 +61,87 @@ IMPORTANT_ITEMS_CEILING = 20
 WEEKDAY_MAP = {
     "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
     "friday": 4, "saturday": 5, "sunday": 6,
+}
+
+# Generic text-dedup helper (used by the proposal layer dedup — deadline/floor vs
+# core). Not a carry-forward mechanism: the carry-forward feature is not part of
+# the public engine.
+DEDUP_TOKEN_OVERLAP = 0.60
+_STOPWORDS = {
+    "a", "an", "the", "to", "of", "for", "and", "or", "in", "on", "at", "with",
+    "my", "is", "it", "as", "by", "from", "into", "via", "vs", "s",
+}
+
+# ── Stage B: capacity-calc (versioned) ───────────────────────────────────────
+CAPACITY_CALC_VERSION = "1.0"
+PROPOSAL_SCHEMA_VERSION = "1.0"
+KNOWN_RUBRIC_VERSIONS = {"1.0", "1.1"}  # bump when the capacity rubric doc revs
+
+# Load-tier multipliers (depth / resistance). Versioned table — refinable.
+CAPACITY_MULTIPLIERS = {
+    "low":      {"depth": 1.0, "resistance": 1.0},
+    "moderate": {"depth": 0.7, "resistance": 0.6},
+    "high":     {"depth": 0.4, "resistance": 0.3},
+    "recovery": {"depth": 0.1, "resistance": 0.0},
+}
+# Worst-tier ordering (higher rank = worse day). Used for "worse tier wins".
+_LOAD_RANK = {"low": 0, "moderate": 1, "high": 2, "recovery": 3}
+_LOAD_BY_RANK = {v: k for k, v in _LOAD_RANK.items()}
+
+# Practice-quality-graded depth-multiplier lift (samatha ladder). Numeric-only;
+# the rubric doc carries the depersonalized description.
+SAMATHA_DEPTH_LIFT = {
+    "none": 0.0, "missed": 0.0,
+    "access": 0.075, "sub-j1": 0.075,
+    "j1-j3": 0.15, "j4-plus": 0.15,
+}
+
+# Depth / resistance per-item costs (versioned tiers). Ordered best→worst.
+DEPTH_COSTS = {"minimal": 0.0, "light": 0.08, "standard": 0.20, "substantial": 0.50, "heavy": 0.85}
+RESISTANCE_COSTS = {"low": 0.0, "moderate": 0.40, "high": 0.85}
+_DEPTH_LADDER = ["minimal", "light", "standard", "substantial", "heavy"]
+PRIMED_DEPTH_DISCOUNT = 0.15  # `primed` tag: depth −0.15, floored at the tier-below cost
+
+# Flags that count as day-degradation for the count-range clean-day bonus.
+DEGRADATION_FLAGS = {"collapse-risk", "over-prediction", "physical-relational-at-risk"}
+
+DEFAULT_DEPTH_TIER = "standard"        # unclassified propose items default here
+DEFAULT_RESISTANCE_TIER = "moderate"
+_OVER_RATIO = 99.0  # sentinel utilization ratio when a budget is 0 but cost > 0
+
+# ── Stage B → --propose (layered assembly) ───────────────────────────────────
+SLACK_FILL_TARGET = 0.625   # greedy-fill core until depth_used ≥ this × depth_budget
+SLACK_RATIO = 0.375         # slack_slots = round(SLACK_RATIO × (core+floor+deadline)), min 1
+STRETCH_COUNT_MAX = 3
+STATIC_FLOOR_CORE = 4       # static-floor sizing: up to N substantive core items
+CORE_MIN = 2                # force-include top-N ranked core items regardless of budget target
+CORE_MIN_COLLAPSE = 1       # collapse-risk days force-include only the single top item
+DEADLINE_DUE_HORIZON = 1    # deadline/due layer: due ≤ ref_date + this many days
+CANDIDATE_POOL_RANKED = 10  # --candidates: top-N ranked items exposed to the grader
+
+_ABBREV_WEEKDAY = {
+    "mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6,
+}
+
+# ── Stage 4: --gates (compute-only) ──────────────────────────────────────────
+PAR_FALLBACK_MAX_AGE_DAYS = 14  # accuracy-table PAR fallback older than this → stale (no revert signal)
+GATES_V1 = {
+    # Graduation gate (capacity BCR, ACR-floored, min-data). NEW compound predicate.
+    "capacity_bcr_target": 0.80,
+    "capacity_bcr_revert": 0.70,
+    "capacity_min_days_graduate": 10,
+    "capacity_min_days_revert": 4,
+    "agenda_acr_floor": 0.60,
+    "agenda_edit_median_floor": 3,
+    "agenda_revert_acr": 0.60,
+    "window_days": 14,
+    "revert_window_days": 7,
+    # Calibration-only — retained for health/confidence; does NOT gate graduation.
+    "priority_par_target": 0.85,
+    "priority_min_sessions": 10,
+    "priority_revert": 0.70,
+    "under_ambition_stretch_rate": 0.50,
+    "under_ambition_min_days": 8,
 }
 
 
@@ -212,6 +294,51 @@ class ResurfacingCandidate:
     timescale: str | None
     threshold_days: int
     days_since_update: int
+
+
+@dataclass
+class CapacityItemCost:
+    id: str
+    effort: str
+    label: str
+    layer_hint: str | None
+    depth_tier: str
+    resistance_tier: str
+    tags: list[str]
+    depth_cost: float
+    resistance_cost: float
+    flags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CapacityResult:
+    calc_version: str
+    rubric_version: str
+    date: str
+    load: str
+    load_base: str            # sleep-derived tier before samatha lift note
+    mult_depth: float         # post-lift depth multiplier (== depth_budget)
+    mult_depth_base: float    # pre-lift depth multiplier
+    mult_res: float
+    samatha_lift: float
+    depth_budget: float
+    resistance_budget: float
+    depth_used: float
+    resistance_used: float
+    depth_ratio: float
+    resistance_ratio: float
+    depth_status: str         # within | edge | over
+    resistance_status: str
+    binding: str              # depth | resistance | both | neither
+    count_low: int
+    count_high: int
+    committed_total: int
+    count_unreliable: bool
+    flags: list[str]
+    physical_relational_ids: list[str]
+    insight_lift_candidate: bool
+    item_costs: list[CapacityItemCost]
+    capacity_frozen_row: str
 
 
 # ── Parsing ────────────────────────────────────────────────────────────────
@@ -1317,6 +1444,895 @@ def build_briefing_output(
     }
 
 
+# ── Text dedup helper ────────────────────────────────────────────────────────
+
+def _normalize_tokens(text: str) -> set[str]:
+    """Lowercase, strip wikilinks/punctuation, drop stopwords → token set.
+    Generic tokenizer used by the proposal layer-dedup (deadline/floor vs core)."""
+    text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)          # unwrap wikilinks
+    text = re.sub(r"\([^)]*\)", " ", text)                   # drop parentheticals
+    text = re.sub(r"[^a-z0-9\s-]", " ", text.lower())        # keep alnum + hyphen
+    toks = {t for t in text.replace("-", " ").split() if t and t not in _STOPWORDS}
+    return toks
+
+
+# ── Stage B: capacity-calc ───────────────────────────────────────────────────
+
+def parse_graded_input(raw: str) -> tuple[dict, list[dict]]:
+    """Accept a path OR inline JSON string. Returns (graded_dict, warnings)."""
+    warnings: list[dict] = []
+    p = Path(raw)
+    text = raw
+    try:
+        if p.exists() and p.is_file():
+            text = p.read_text(encoding="utf-8")
+    except OSError:
+        pass
+    try:
+        return json.loads(text), warnings
+    except json.JSONDecodeError as e:
+        warnings.append({"type": "graded_parse_error", "detail": str(e)})
+        return {}, warnings
+
+
+def _num(x) -> float | None:
+    """Coerce a graded numeric field to float; non-coercible → None.
+
+    A sub-agent grader may emit numbers as strings (e.g. "6.5") or garbage; treating
+    a non-coercible value as absent keeps the deterministic comparisons below from
+    crashing on a TypeError. None behaves exactly like a missing field."""
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+
+def _derive_load(graded: dict) -> tuple[str, bool]:
+    """Sleep → load tier. Worst-of-two-axes (hours vs quality); recovery overrides.
+
+    Realizes the spec's four rules via the 'worse tier wins' precedence:
+    hours→{≥7.5 low, ≥6.5 moderate, <6.5 high}; quality→{good/excellent low,
+    fair moderate, poor/below-avg high, depleted recovery}; take the WORSE
+    (higher-rank) of the two axes so `low` requires BOTH hours≥7.5 AND good/
+    excellent quality. Explicit day_context.recovery forces recovery.
+    """
+    sleep = graded.get("sleep") or {}
+    hours = _num(sleep.get("hours"))
+    tier = str(sleep.get("tier") or "").lower()
+    recovery_flag = bool((graded.get("day_context") or {}).get("recovery"))
+
+    ranks = []
+    if hours is not None:
+        if hours >= 7.5:
+            ranks.append(_LOAD_RANK["low"])
+        elif hours >= 6.5:
+            ranks.append(_LOAD_RANK["moderate"])
+        else:
+            ranks.append(_LOAD_RANK["high"])
+    q = {
+        "excellent": "low", "good": "low", "fair": "moderate",
+        "below-avg": "high", "poor": "high", "depleted": "recovery",
+    }.get(tier)
+    if q is not None:
+        ranks.append(_LOAD_RANK[q])
+
+    base_rank = max(ranks) if ranks else _LOAD_RANK["moderate"]
+    if recovery_flag:
+        base_rank = _LOAD_RANK["recovery"]
+    return _LOAD_BY_RANK[base_rank], recovery_flag
+
+
+def _derive_multipliers(load: str, samatha_tier: str) -> tuple[float, float, float, float, list[str]]:
+    """(mult_depth_base, mult_depth_post_lift, mult_res, samatha_lift, flags).
+
+    The samatha lift is added to the DEPTH multiplier only. The reported load tier
+    stays sleep-derived so there is a single source of truth for load (fatigue-
+    exemption, over-prediction, etc.).
+    """
+    base = CAPACITY_MULTIPLIERS[load]
+    mult_depth_base = base["depth"]
+    mult_res = base["resistance"]
+    lift = SAMATHA_DEPTH_LIFT.get(samatha_tier, 0.0)
+    flags = ["deep-attainment-watch"] if samatha_tier == "j4-plus" else []
+    return mult_depth_base, round(mult_depth_base + lift, 3), mult_res, lift, flags
+
+
+def _day_flags(graded: dict, load: str) -> tuple[list[str], bool, bool]:
+    """Day-level flags independent of the committed set.
+    Returns (flags, collapse_risk, insight_lift_candidate)."""
+    dctx = graded.get("day_context") or {}
+    sleep = graded.get("sleep") or {}
+    hours = _num(sleep.get("hours"))
+    tier = str(sleep.get("tier") or "").lower()
+    s3 = _num(graded.get("sleep_3day_avg"))
+    trend = str(graded.get("sleep_trend") or "").lower()
+    sprint_tail = bool(dctx.get("sprint_tail"))
+    fasting = bool(dctx.get("fasting"))
+
+    flags: list[str] = []
+    collapse = False
+    if (s3 is not None and s3 < 7.0 and trend == "declining" and sprint_tail) or (
+        hours is not None and hours < 5.5 and tier == "poor"
+    ):
+        collapse = True
+        flags.append("collapse-risk")
+    if load in ("high", "recovery") or fasting or sprint_tail:
+        flags.append("over-prediction")
+
+    insight_tier = str((graded.get("insight") or {}).get("tier") or "none").lower()
+    insight_lift_candidate = insight_tier == "good"
+    return flags, collapse, insight_lift_candidate
+
+
+def _one_cost(
+    dtier: str, rtier: str, tags: list[str], effort: str, effort_seen: set,
+    mult_depth: float, fatigue: bool, unclassified: bool,
+) -> tuple[float, float, list[str], str, str]:
+    """Cost of a single item given running effort_seen state. Does not mutate it."""
+    flags: list[str] = []
+    if dtier not in DEPTH_COSTS:
+        dtier = DEFAULT_DEPTH_TIER
+    if rtier not in RESISTANCE_COSTS:
+        rtier = DEFAULT_RESISTANCE_TIER
+    if unclassified:
+        flags.append("unclassified-default")
+
+    depth = DEPTH_COSTS[dtier]
+    has_primed = "primed" in tags
+    has_partial = "partial-carry" in tags
+    if has_primed and has_partial:
+        flags.append("tag-conflict:partial-carry-wins")  # partial-carry wins; warn
+    if has_partial:  # bump one depth tier up
+        idx = _DEPTH_LADDER.index(dtier)
+        depth = DEPTH_COSTS[_DEPTH_LADDER[min(idx + 1, len(_DEPTH_LADDER) - 1)]]
+        flags.append("depth-underscore")
+    elif has_primed:  # depth −0.15, floored at the tier-below cost
+        idx = _DEPTH_LADDER.index(dtier)
+        below = DEPTH_COSTS[_DEPTH_LADDER[max(idx - 1, 0)]]
+        depth = max(depth - PRIMED_DEPTH_DISCOUNT, below)
+    if fatigue and ("generative" in tags or "momentum" in tags):
+        depth = depth * mult_depth  # exactly cancels the budget discount for this item
+        flags.append("fatigue-exempt")
+
+    rcost = 0.0 if effort in effort_seen else RESISTANCE_COSTS[rtier]
+    return round(depth, 3), round(rcost, 3), flags, dtier, rtier
+
+
+def _item_costs(committed: list[dict], mult_depth: float, load: str) -> list[CapacityItemCost]:
+    """Per-item costs over the committed set in order (resistance paid once/effort)."""
+    fatigue = load in ("high", "recovery")
+    effort_seen: set = set()
+    out: list[CapacityItemCost] = []
+    for it in committed:
+        eff = it.get("effort", "")
+        tags = [str(t).lower() for t in (it.get("tags") or [])]
+        dtier = str(it.get("depth_tier") or DEFAULT_DEPTH_TIER).lower()
+        rtier = str(it.get("resistance_tier") or DEFAULT_RESISTANCE_TIER).lower()
+        depth, rcost, flags, dtier2, rtier2 = _one_cost(
+            dtier, rtier, tags, eff, effort_seen, mult_depth, fatigue,
+            bool(it.get("_unclassified")),
+        )
+        effort_seen.add(eff)  # 2nd+ item in same effort → resistance 0
+        out.append(CapacityItemCost(
+            id=it.get("id", ""), effort=eff, label=it.get("label", it.get("id", "")),
+            layer_hint=it.get("layer_hint"), depth_tier=dtier2, resistance_tier=rtier2,
+            tags=tags, depth_cost=depth, resistance_cost=rcost, flags=flags,
+        ))
+    return out
+
+
+def _ratio(used: float, budget: float) -> float:
+    if budget <= 0:
+        return 0.0 if used <= 1e-9 else _OVER_RATIO
+    return used / budget
+
+
+def _status(r: float) -> str:
+    if r > 1.0:
+        return "over"
+    if r >= 0.8:
+        return "edge"
+    return "within"
+
+
+def compute_capacity(graded: dict, committed: list[dict], ref_date: date) -> CapacityResult | None:
+    """Stage-B deterministic capacity vector over a committed item set.
+    Returns None when sleep input is absent (caller skips)."""
+    sleep = graded.get("sleep") or {}
+    if sleep.get("hours") is None and not sleep.get("tier"):
+        return None  # no sleep input → capacity cannot run
+
+    date_str = graded.get("date") or ref_date.isoformat()
+    rubric_version = str(graded.get("rubric_version") or "unknown")
+
+    load, _recovery = _derive_load(graded)
+    samatha_tier = str((graded.get("samatha") or {}).get("tier") or "none").lower()
+    mult_depth_base, mult_depth, mult_res, lift, lift_flags = _derive_multipliers(load, samatha_tier)
+    depth_budget = round(1.0 * mult_depth, 3)
+    resistance_budget = round(1.0 * mult_res, 3)
+
+    flags, collapse, insight_candidate = _day_flags(graded, load)
+    flags = list(flags) + lift_flags
+
+    costs = _item_costs(committed, mult_depth, load)
+    committed_total = len(costs)
+    depth_used = round(sum(c.depth_cost for c in costs), 3)
+    resistance_used = round(sum(c.resistance_cost for c in costs), 3)
+
+    # physical/relational-at-risk (needs committed set)
+    pr_ids = [c.id for c in costs if "embodied" in c.tags]
+    if load in ("high", "recovery") and pr_ids:
+        flags.append("physical-relational-at-risk")
+    else:
+        pr_ids = []
+
+    depth_ratio = _ratio(depth_used, depth_budget)
+    resistance_ratio = _ratio(resistance_used, resistance_budget)
+    d, r = depth_ratio, resistance_ratio
+    if d >= 0.8 and r >= 0.8 and abs(d - r) <= 0.1:
+        binding = "both"
+    elif d >= 0.8 or r >= 0.8:
+        binding = "depth" if d >= r else "resistance"
+    else:
+        binding = "neither"
+
+    # Count range (v1.0 — refinable). low = greedy cumulative fit in order.
+    depth_cum = res_cum = 0.0
+    count_low = 0
+    for c in costs:
+        if depth_cum + c.depth_cost > depth_budget + 1e-9 or \
+           res_cum + c.resistance_cost > resistance_budget + 1e-9:
+            break
+        depth_cum += c.depth_cost
+        res_cum += c.resistance_cost
+        count_low += 1
+    light_beyond = sum(1 for c in costs[count_low:] if c.depth_tier in ("light", "minimal"))
+    clean_bonus = 0 if (set(flags) & DEGRADATION_FLAGS) else 1
+    count_high = count_low + light_beyond + clean_bonus
+    count_high = max(count_low, min(count_high, committed_total))
+
+    flags_str = ",".join(flags) if flags else "none"
+    row = (
+        f"CAPACITY-FROZEN | date={date_str} | rubric={rubric_version} | calc={CAPACITY_CALC_VERSION} | "
+        f"load={load} | mult_depth={mult_depth:.2f} | mult_res={mult_res:.2f} | "
+        f"range={count_low}-{count_high}/{committed_total} | binding={binding} | flags={flags_str}"
+    )
+
+    return CapacityResult(
+        calc_version=CAPACITY_CALC_VERSION, rubric_version=rubric_version, date=date_str,
+        load=load, load_base=load, mult_depth=mult_depth, mult_depth_base=mult_depth_base,
+        mult_res=mult_res, samatha_lift=lift, depth_budget=depth_budget,
+        resistance_budget=resistance_budget, depth_used=depth_used, resistance_used=resistance_used,
+        depth_ratio=round(depth_ratio, 3), resistance_ratio=round(resistance_ratio, 3),
+        depth_status=_status(depth_ratio), resistance_status=_status(resistance_ratio),
+        binding=binding, count_low=count_low, count_high=count_high, committed_total=committed_total,
+        count_unreliable=collapse, flags=flags, physical_relational_ids=pr_ids,
+        insight_lift_candidate=insight_candidate, item_costs=costs, capacity_frozen_row=row,
+    )
+
+
+# ── Stage B → --propose (layered agenda draft) ───────────────────────────────
+
+def parse_routine_floor(template_path: Path, weekday: int) -> tuple[list[dict], list[dict]]:
+    """Parse Templates/routine-floor.md → floor items matching today's weekday.
+    Format: `- item text (days: daily|mon,tue,…; effort: slug)`.
+    Missing template → empty floor + a warning (graceful)."""
+    warnings: list[dict] = []
+    items: list[dict] = []
+    if not template_path.exists():
+        warnings.append({"type": "missing_floor_template", "file": str(template_path)})
+        return items, warnings
+    try:
+        content = template_path.read_text(encoding="utf-8")
+    except OSError as e:
+        warnings.append({"type": "floor_read_error", "detail": str(e)})
+        return items, warnings
+    _, body = parse_frontmatter(content)
+    for line in body.split("\n"):
+        s = line.strip()
+        m = re.match(r"^-\s+(.*?)\s*\(\s*days:\s*([^;]+);\s*effort:\s*([^)]+)\)\s*$", s)
+        if not m:
+            continue
+        text, days_raw, effort = m.group(1).strip(), m.group(2).strip().lower(), m.group(3).strip()
+        if _floor_matches_day(days_raw, weekday):
+            items.append({"text": text, "effort": effort})
+    return items, warnings
+
+
+def _floor_matches_day(days_raw: str, weekday: int) -> bool:
+    tokens = [d.strip() for d in days_raw.split(",")]
+    if "daily" in tokens:
+        return True
+    for d in tokens:
+        if _ABBREV_WEEKDAY.get(d) == weekday or WEEKDAY_MAP.get(d) == weekday:
+            return True
+    return False
+
+
+def _floor_id(effort: str, text: str) -> str:
+    """Canonical id for a routine-floor item — must match everywhere (propose,
+    --candidates, grader input) so classification lookups never miss."""
+    return f"{effort}::floor::{re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')[:40]}"
+
+
+def build_candidate_pool(
+    important_items: list["ItemScore"], floor_items: list[dict], deadline_items: list[dict],
+) -> list[dict]:
+    """The gradeable candidate pool for the grader: exact item ids the proposal
+    assembly will look up. Deadline/floor first (their layer wins on id collision),
+    then top-ranked items."""
+    pool: list[dict] = []
+    seen: set = set()
+    for c in deadline_items:
+        if c["id"] in seen:
+            continue
+        seen.add(c["id"])
+        pool.append({"id": c["id"], "label": c.get("label", c["id"]), "effort": c["effort"],
+                     "layer_hint": "deadline", "due": c.get("due"), "carry": None})
+    for f in floor_items:
+        fid = _floor_id(f["effort"], f["text"])
+        if fid in seen:
+            continue
+        seen.add(fid)
+        pool.append({"id": fid, "label": f["text"], "effort": f["effort"],
+                     "layer_hint": "floor", "due": None, "carry": None})
+    for it in important_items[:CANDIDATE_POOL_RANKED]:
+        if it.id in seen:
+            continue
+        seen.add(it.id)
+        pool.append({"id": it.id, "label": it.description, "effort": it.effort,
+                     "layer_hint": "core", "due": it.due, "carry": None})
+    return pool
+
+
+def _classify(item_id: str, effort: str, classified: dict) -> dict:
+    """Look up an item's grader classification; default standard/moderate if absent."""
+    g = classified.get(item_id)
+    if g:
+        return {
+            "id": item_id, "effort": effort,
+            "depth_tier": g.get("depth_tier", DEFAULT_DEPTH_TIER),
+            "resistance_tier": g.get("resistance_tier", DEFAULT_RESISTANCE_TIER),
+            "tags": g.get("tags", []) or [], "layer_hint": g.get("layer_hint"),
+            "_unclassified": False,
+        }
+    return {
+        "id": item_id, "effort": effort, "depth_tier": DEFAULT_DEPTH_TIER,
+        "resistance_tier": DEFAULT_RESISTANCE_TIER, "tags": [], "layer_hint": None,
+        "_unclassified": True,
+    }
+
+
+def collect_deadline_items(notes: list[NoteData], maps: list[MapData], ref_date: date) -> list[dict]:
+    """Deadline/due layer: any open Note or Minor Action (ANY effort, incl. suppressed
+    / below-floor) with due ≤ ref_date + DEADLINE_DUE_HORIZON. This is the internal
+    per-item due-date exemption path over vault items — NOT external-calendar ingestion
+    (external calendars are out of scope)."""
+    horizon = ref_date + timedelta(days=DEADLINE_DUE_HORIZON)
+    out: list[dict] = []
+    seen: set = set()
+    for n in notes:
+        if n.status not in ("active", "waiting") or n.due is None or n.due > horizon:
+            continue
+        eff = n.efforts[0] if n.efforts else ""
+        key = ("note", n.slug)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"id": f"{eff}::note::{n.slug}", "slug": n.slug, "effort": eff,
+                    "label": n.slug, "due": n.due.isoformat()})
+    for m in maps:
+        for ma in m.minor_actions:
+            if ma.due is None or ma.due > horizon:
+                continue
+            out.append({"id": f"{m.slug}::minor::{ma.description[:60]}", "slug": None,
+                        "effort": m.slug, "label": ma.description, "due": ma.due.isoformat()})
+    return out
+
+
+def build_proposal(
+    important_items: list[ItemScore], deadline_items: list[dict], floor_items: list[dict],
+    graded: dict | None, ref_date: date, vault_path: Path,
+) -> dict:
+    """Assemble the layered agenda draft (deadline / floor / core / stretch / slack)
+    and its capacity block. Returns the proposal artifact dict."""
+    date_str = (graded or {}).get("date") or ref_date.isoformat()
+    classified = {it["id"]: it for it in (graded or {}).get("items", [])}
+    capacity_available = bool(graded and (graded.get("sleep") or {}))
+
+    if capacity_available:
+        load, _rec = _derive_load(graded)
+        samatha_tier = str((graded.get("samatha") or {}).get("tier") or "none").lower()
+        _mdb, mult_depth, _mr, _lift, _lf = _derive_multipliers(load, samatha_tier)
+        depth_budget = round(1.0 * mult_depth, 3)
+        fatigue = load in ("high", "recovery")
+        sized_by = "capacity"
+    else:
+        load, mult_depth, depth_budget, fatigue, sized_by = "unknown", 1.0, None, False, "static-floor"
+
+    # Keys already consumed by deadline/floor (skip them in the ranked core).
+    used_slugs = {c["slug"] for c in deadline_items if c.get("slug")}
+    floor_deadline_texts = [_normalize_tokens(c.get("label", "")) for c in deadline_items]
+    floor_deadline_texts += [_normalize_tokens(f["text"]) for f in floor_items]
+
+    def _already_placed(item: ItemScore) -> bool:
+        slug = item.id.split("::")[-1]
+        if slug in used_slugs:
+            return True
+        dt = _normalize_tokens(item.description)
+        for ft in floor_deadline_texts:
+            if ft and dt and len(ft & dt) / len(ft) >= DEDUP_TOKEN_OVERLAP:
+                return True
+        return False
+
+    core: list[ItemScore] = []
+    consumed_ids: set = set()
+    effort_seen: set = set()
+    depth_used = 0.0
+    high_res_count = 0
+    cap_tripped = False
+    target = SLACK_FILL_TARGET * depth_budget if depth_budget is not None else None
+
+    # Seed the depth budget with the already-committed deadline + floor layers so the
+    # greedy core fills only the REMAINING budget. Without this the committed set
+    # (deadline + floor + core) ran ~2x over depth_budget and the frozen range sat far
+    # below the committed count. Walk deadline → floor in the same order (threading the
+    # same effort_seen) as the committed-set / capacity recompute so resistance-once
+    # accounting stays consistent end-to-end.
+    def _seed_layer(item_id: str, effort: str) -> None:
+        nonlocal depth_used
+        cls = _classify(item_id, effort, classified)
+        depth, _rc, _fl, _dt, _rt = _one_cost(
+            str(cls["depth_tier"]).lower(), str(cls["resistance_tier"]).lower(),
+            [str(t).lower() for t in cls["tags"]],
+            effort, effort_seen, mult_depth, fatigue, cls["_unclassified"],
+        )
+        effort_seen.add(effort)
+        if target is not None:
+            depth_used += depth
+
+    for c in deadline_items:
+        _seed_layer(c["id"], c["effort"])
+    for f in floor_items:
+        _seed_layer(_floor_id(f["effort"], f["text"]), f["effort"])
+
+    # Collapse-risk days force-include only the single top item; normal days force the
+    # top CORE_MIN regardless of the seeded budget (guarantees a non-trivial agenda
+    # even when deadline + floor already consume the budget). v1.0 — refinable.
+    if capacity_available:
+        _cf, collapse_risk, _ilc = _day_flags(graded, load)
+    else:
+        collapse_risk = False
+    core_min = CORE_MIN_COLLAPSE if collapse_risk else CORE_MIN
+
+    for it in important_items:
+        if _already_placed(it):
+            continue
+        cls = _classify(it.id, it.effort, classified)
+        rtier = str(cls["resistance_tier"]).lower()
+        is_high = (rtier == "high") and (it.effort not in effort_seen)
+        if is_high and high_res_count >= 1:
+            cap_tripped = True
+            continue  # hard cap: max 1 high-resistance item/day
+        if target is None:  # static-floor sizing: up to STATIC_FLOOR_CORE items
+            core.append(it)
+            consumed_ids.add(it.id)
+            effort_seen.add(it.effort)
+            if is_high:
+                high_res_count += 1
+            if len(core) >= STATIC_FLOOR_CORE:
+                break
+            continue
+        depth, _rc, _fl, _dt, _rt = _one_cost(
+            str(cls["depth_tier"]).lower(), rtier, [str(t).lower() for t in cls["tags"]],
+            it.effort, effort_seen, mult_depth, fatigue, cls["_unclassified"],
+        )
+        core.append(it)
+        consumed_ids.add(it.id)
+        effort_seen.add(it.effort)
+        if is_high:
+            high_res_count += 1
+        depth_used += depth
+        # Force-include the top core_min items; only then honor the greedy stop.
+        if len(core) >= core_min and depth_used >= target - 1e-9:
+            break
+
+    # Stretch: next ranked items beyond the core (never budgeted / verdicted).
+    stretch: list[ItemScore] = []
+    for it in important_items:
+        if it.id in consumed_ids or _already_placed(it):
+            continue
+        stretch.append(it)
+        consumed_ids.add(it.id)
+        if len(stretch) >= STRETCH_COUNT_MAX:
+            break
+
+    # Committed set (order: deadline → floor → core) for the capacity recompute.
+    committed_dicts: list[dict] = []
+    for c in deadline_items:
+        cl = _classify(c["id"], c["effort"], classified)
+        cl["label"] = c.get("label", c["id"])
+        committed_dicts.append(cl)
+    for f in floor_items:
+        fid = _floor_id(f['effort'], f['text'])
+        cl = _classify(fid, f["effort"], classified)
+        cl["label"] = f["text"]
+        committed_dicts.append(cl)
+    for it in core:
+        cl = _classify(it.id, it.effort, classified)
+        cl["label"] = it.description
+        committed_dicts.append(cl)
+
+    capacity_result = compute_capacity(graded, committed_dicts, ref_date) if capacity_available else None
+    cost_by_id = {c.id: c for c in (capacity_result.item_costs if capacity_result else [])}
+
+    def _entry(item_id, effort, label, source, due=None):
+        cl = _classify(item_id, effort, classified)
+        c = cost_by_id.get(item_id)
+        return {
+            "id": item_id, "effort": effort, "label": label, "source": source, "due": due,
+            "depth_tier": cl["depth_tier"], "resistance_tier": cl["resistance_tier"],
+            "tags": cl["tags"], "layer_hint": cl["layer_hint"],
+            "depth_cost": c.depth_cost if c else None,
+            "resistance_cost": c.resistance_cost if c else None,
+            "flags": (c.flags if c else (["unclassified-default"] if cl["_unclassified"] else [])),
+            "carry": None,
+        }
+
+    deadline_entries = [_entry(c["id"], c["effort"], c.get("label", c["id"]), "deadline", c.get("due"))
+                        for c in deadline_items]
+    floor_entries = []
+    for f in floor_items:
+        fid = _floor_id(f['effort'], f['text'])
+        floor_entries.append(_entry(fid, f["effort"], f["text"], "floor"))
+    core_entries = [_entry(it.id, it.effort, it.description, "core", it.due) for it in core]
+    stretch_entries = [_entry(it.id, it.effort, it.description, "stretch", it.due) for it in stretch]
+
+    slack_slots = max(1, round(SLACK_RATIO * (len(core) + len(floor_items) + len(deadline_items))))
+
+    # Day-type confidence
+    reasons: list[str] = []
+    dctx = (graded or {}).get("day_context") or {}
+    cold = _num(dctx.get("cold_start_days")) or 0        # graded numeric — coerce before compare
+    override_streak = _num(dctx.get("override_streak")) or 0
+    collapse = bool(capacity_result and capacity_result.count_unreliable)
+    deadline_nonempty = len(deadline_items) > 0
+    deadline_3d = any(
+        i.due and (date.fromisoformat(i.due) - ref_date).days <= 3
+        for i in important_items if i.due
+    )
+    if collapse:
+        reasons.append("collapse-risk")
+    if cold > 3:
+        reasons.append(f"cold_start_days={cold}")
+    if override_streak > 1:
+        reasons.append(f"override_streak={override_streak}")
+    if not (deadline_nonempty or deadline_3d):
+        reasons.append("no deadline / near-deadline anchor")
+    if cap_tripped:
+        reasons.append("high-resistance cap tripped during fill")
+    confidence = "clean" if not [r for r in reasons if r != "high-resistance cap tripped during fill"] else "turbulent"
+
+    agenda_frozen = (
+        f"AGENDA-FROZEN | date={date_str} | core={len(core)} | floor={len(floor_items)} | "
+        f"deadline={len(deadline_items)} | stretch={len(stretch)} | slack={slack_slots} | "
+        f"confidence={confidence} | sized_by={sized_by} | schema={PROPOSAL_SCHEMA_VERSION}"
+    )
+
+    return {
+        "schema_version": PROPOSAL_SCHEMA_VERSION,
+        "computed_at": datetime.now().isoformat(timespec="seconds"),
+        "date": date_str,
+        "capacity": to_serializable(capacity_result) if capacity_result else None,
+        "proposal": {
+            "deadline": deadline_entries, "floor": floor_entries, "core": core_entries,
+            "stretch": stretch_entries, "slack_slots": slack_slots,
+            "confidence": confidence, "confidence_reasons": reasons, "sized_by": sized_by,
+        },
+        "rows": {
+            "agenda_frozen": agenda_frozen,
+            "capacity_frozen": capacity_result.capacity_frozen_row if capacity_result else None,
+        },
+    }
+
+
+# ── --verdict (mechanical outcome scoring) ───────────────────────────────────
+
+def compute_verdict(proposal: dict, actual: dict, ref_date: date) -> dict:
+    """Mechanical count/binding/stretch verdict over a frozen proposal + actuals.
+    Pure function — no vault loading."""
+    cap = proposal.get("capacity") or {}
+    date_str = proposal.get("date") or ref_date.isoformat()
+
+    # Static-floor mornings freeze no capacity prediction (capacity block is null /
+    # has no count_low). Emitting a MISS row here would poison BCR from every
+    # input-less day, so skip cleanly with no CAPACITY-VERDICT row.
+    if not proposal.get("capacity") or cap.get("count_low") is None:
+        return {
+            "skipped": "no capacity prediction in frozen artifact (static-floor day)",
+            "date": date_str,
+        }
+
+    low = cap.get("count_low")
+    high = cap.get("count_high")
+    unreliable = bool(cap.get("count_unreliable"))
+    binding_pred = cap.get("binding")
+    calc_v = cap.get("calc_version", CAPACITY_CALC_VERSION)
+    rubric_v = cap.get("rubric_version", "unknown")
+
+    actual_n = actual.get("completed_committed")
+    binding_actual = actual.get("binding_actual")
+    stretch_offered = len(proposal.get("proposal", {}).get("stretch", []))
+    stretch_done = actual.get("completed_stretch", 0)
+
+    if unreliable:
+        count = "UNRELIABLE"
+    elif low is None or high is None or actual_n is None:
+        count = "MISS"
+    elif low <= actual_n <= high:
+        count = "HIT"
+    elif abs(actual_n - low) <= 1 or abs(actual_n - high) <= 1:
+        count = "DIR-HIT"
+    else:
+        count = "MISS"
+
+    binding_v = "HIT" if (binding_pred and binding_actual and binding_pred == binding_actual) else "MISS"
+
+    row = (
+        f"CAPACITY-VERDICT | date={date_str} | range={low}-{high} | actual={actual_n} | "
+        f"count={count} | binding_pred={binding_pred} | binding_actual={binding_actual} | "
+        f"binding={binding_v} | stretch={stretch_done}/{stretch_offered} | calc={calc_v} | rubric={rubric_v}"
+    )
+    return {
+        "date": date_str, "range": [low, high], "actual": actual_n,
+        "count": count, "binding_pred": binding_pred, "binding_actual": binding_actual,
+        "binding": binding_v, "stretch_done": stretch_done, "stretch_offered": stretch_offered,
+        "override_day": bool(actual.get("override_day")), "count_unreliable": unreliable,
+        "capacity_verdict_row": row,
+    }
+
+
+# ── --gates (compute-only phase status) ──────────────────────────────────────
+
+def _parse_kv_row(line: str) -> dict:
+    d: dict = {}
+    parts = [p.strip() for p in line.split("|")]
+    if parts:
+        d["_prefix"] = parts[0]
+    for seg in parts[1:]:
+        if "=" in seg:
+            k, v = seg.split("=", 1)
+            d[k.strip()] = v.strip()
+    return d
+
+
+def _grep_log_rows(vault_path: Path, prefix: str) -> list[dict]:
+    rows: list[dict] = []
+    logs_dir = vault_path / "Daily" / "logs"
+    if not logs_dir.exists():
+        return rows
+    for fp in sorted(logs_dir.glob("*-log.md")):
+        try:
+            content = fp.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for line in content.split("\n"):
+            line = line.strip()
+            if "|" in line and line.split("|", 1)[0].strip() == prefix:
+                rows.append(_parse_kv_row(line))
+    return rows
+
+
+def _rows_in_window(rows: list[dict], ref_date: date, days: int) -> list[dict]:
+    lo = ref_date - timedelta(days=days - 1)
+    out = []
+    for r in rows:
+        try:
+            rd = date.fromisoformat(r.get("date", ""))
+        except ValueError:
+            continue
+        if lo <= rd <= ref_date:
+            out.append(r)
+    return out
+
+
+def _is_float(s) -> bool:
+    try:
+        float(s)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+def _acr_revert(acr_rows: list[dict], ref_date: date) -> bool:
+    """ACR revert: mean(ACR-ROW.c) < agenda_revert_acr in any 7-day window ending
+    within the last 14 days, WITH a reliable_days ≥ capacity_min_days_revert (=4)
+    min-data guard (a 2-row window cannot trip a spurious revert). The all-windows
+    outer scan latches the revert for up to 14 days after the bad rows age out —
+    a stateless anti-flap cooldown (no stored revert timestamp)."""
+    min_data = GATES_V1["capacity_min_days_revert"]
+    for end_off in range(0, GATES_V1["window_days"]):
+        end = ref_date - timedelta(days=end_off)
+        win = _rows_in_window(acr_rows, end, GATES_V1["revert_window_days"])
+        c_vals = [float(r["c"]) for r in win if _is_float(r.get("c"))]
+        if len(c_vals) >= min_data and statistics.mean(c_vals) < GATES_V1["agenda_revert_acr"]:
+            return True
+    return False
+
+
+def _bcr_revert(cv_rows: list[dict], ref_date: date) -> bool:
+    """BCR revert: binding-HIT rate < capacity_bcr_revert in any 7-day window ending
+    within the last 14 days, WITH a reliable_days ≥ capacity_min_days_revert (=4)
+    min-data guard (the 0/4-reliable spurious-revert hazard). Same stateless anti-flap
+    cooldown as _acr_revert — one breach latches revert for up to 14 days so a BCR
+    oscillating in the 0.70–0.80 hysteresis band cannot flip the live branch on
+    consecutive closes. UNRELIABLE rows are excluded from the window."""
+    min_data = GATES_V1["capacity_min_days_revert"]
+    for end_off in range(0, GATES_V1["window_days"]):
+        end = ref_date - timedelta(days=end_off)
+        win = [r for r in _rows_in_window(cv_rows, end, GATES_V1["revert_window_days"])
+               if r.get("count") != "UNRELIABLE"]
+        if len(win) >= min_data:
+            hits = sum(1 for r in win if r.get("binding") == "HIT")
+            if (hits / len(win)) < GATES_V1["capacity_bcr_revert"]:
+                return True
+    return False
+
+
+def _parse_par_table(vault_path: Path) -> tuple[float | None, int | None, date | None]:
+    """Last PAR value + session number + row date from the Accuracy Tracking table.
+
+    Restricted to the `## Accuracy Tracking` section only: the ACR Tracking table
+    (and other pipe tables) share a `| date | int | … |` column shape, so scanning
+    the whole note would let a cross-table row pollute the PAR fallback. Also
+    returns the last row's date so the caller can detect stale pre-gap data."""
+    cal = vault_path / "Notes" / "pulse-priority-calibration.md"
+    if not cal.exists():
+        return None, None, None
+    last_par = last_session = last_date = None
+    in_section = False
+    for line in cal.read_text(encoding="utf-8").split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            in_section = re.match(r"^##\s+Accuracy Tracking\b", stripped) is not None
+            continue
+        if not in_section:
+            continue
+        m = re.match(r"^\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(\d+)\s*\|\s*\d+\s*\|\s*([0-9.]+)\s*\|", line)
+        if m:
+            try:
+                last_date = date.fromisoformat(m.group(1))
+            except ValueError:
+                last_date = None
+            last_session = int(m.group(2))
+            last_par = float(m.group(3))
+    return last_par, last_session, last_date
+
+
+def compute_gates(vault_path: Path, ref_date: date) -> dict:
+    """Compute-only phase status vs GATES_V1 (public). No writes, no scheduling.
+
+    THE graduation gate is compound and lives on the `capacity` block:
+      capacity.gate_met = bcr≥0.80 AND rolling_acr≥0.60 AND median_edits≤3
+                          AND reliable_days≥10.
+    `agenda_composition` holds the ACR revert substrate; `priority_par` and
+    `under_ambition` are calibration/health only and do NOT gate graduation.
+    """
+    acr_rows = _grep_log_rows(vault_path, "ACR-ROW")
+    cv_rows = _grep_log_rows(vault_path, "CAPACITY-VERDICT")
+    par_rows = _grep_log_rows(vault_path, "PAR-ROW")
+
+    # ── Agenda composition (ACR revert substrate + the composition floor inputs) ──
+    win = _rows_in_window(acr_rows, ref_date, GATES_V1["window_days"])
+    edits = [int(r["edits"]) for r in win if str(r.get("edits", "")).isdigit()]
+    agenda_days = len(win)
+    median_edits = statistics.median(edits) if edits else None
+    full_rej = sum(1 for r in win if r.get("rejected") == "yes" and r.get("override") != "yes")
+    c_vals = [float(r["c"]) for r in win if _is_float(r.get("c"))]
+    rolling_acr = round(statistics.mean(c_vals), 3) if c_vals else None
+    agenda = {
+        "rolling_acr": rolling_acr, "median_edits": median_edits, "agenda_days": agenda_days,
+        "full_rejections_non_override": full_rej,
+        "revert_triggered": _acr_revert(acr_rows, ref_date),
+        "days_of_data": agenda_days,
+        "status": "insufficient-data" if agenda_days < GATES_V1["capacity_min_days_graduate"] else "measuring",
+    }
+
+    # ── Capacity → BCR: THE graduation gate (compound, ACR-floored, min-data) ──
+    cwin = [r for r in _rows_in_window(cv_rows, ref_date, GATES_V1["window_days"])
+            if r.get("count") != "UNRELIABLE"]
+    reliable_days = len(cwin)
+    binding_hits = sum(1 for r in cwin if r.get("binding") == "HIT")
+    bcr = round(binding_hits / reliable_days, 3) if reliable_days else None
+    gate_met = bool(
+        bcr is not None and bcr >= GATES_V1["capacity_bcr_target"]
+        and rolling_acr is not None and rolling_acr >= GATES_V1["agenda_acr_floor"]
+        and median_edits is not None and median_edits <= GATES_V1["agenda_edit_median_floor"]
+        and reliable_days >= GATES_V1["capacity_min_days_graduate"]
+    )
+    if reliable_days < GATES_V1["capacity_min_days_graduate"]:
+        cap_status = "insufficient-data"
+    elif gate_met:
+        cap_status = "graduatable"
+    else:
+        cap_status = "measuring"
+    capacity = {
+        "bcr": bcr, "reliable_days": reliable_days,
+        "rolling_acr": rolling_acr, "median_edits": median_edits,
+        "gate_met": gate_met,
+        "revert_triggered": _bcr_revert(cv_rows, ref_date),
+        "days_of_data": reliable_days,
+        "status": cap_status,
+    }
+
+    # ── Priority PAR — CALIBRATION ONLY (does NOT gate graduation) ──
+    pwin = _rows_in_window(par_rows, ref_date, GATES_V1["window_days"])
+    par_stale = False
+    if pwin:
+        zero = sum(1 for r in pwin if str(r.get("corrections", "")).isdigit() and int(r["corrections"]) == 0)
+        par = round(zero / len(pwin), 3)
+        par_sessions = len(pwin)
+        par_source = "PAR-ROW"
+    else:
+        par, par_sessions, par_date = _parse_par_table(vault_path)
+        par_source = "accuracy-table-fallback"
+        # Pre-gap fallback data older than the window is stale: report it but never
+        # let it drive a revert signal.
+        if par_date is not None and (ref_date - par_date).days > PAR_FALLBACK_MAX_AGE_DAYS:
+            par_stale = True
+            par_source = "accuracy-table-fallback-stale"
+    if par_stale:
+        priority = {
+            "par": par, "sessions": par_sessions or 0, "par_source": par_source,
+            "revert_triggered": False,  # stale pre-gap data must not signal a revert
+            "days_of_data": par_sessions or 0,
+            "status": "stale",
+        }
+    else:
+        priority = {
+            "par": par, "sessions": par_sessions or 0, "par_source": par_source,
+            "revert_triggered": bool(par is not None and par < GATES_V1["priority_revert"]),
+            "days_of_data": par_sessions or 0,
+            "status": "insufficient-data" if (par_sessions or 0) < GATES_V1["priority_min_sessions"] else "measuring",
+        }
+
+    # ── Under-ambition tripwire — CALIBRATION/HEALTH ONLY (does NOT gate) ──
+    # Exclude UNRELIABLE rows (same as BCR): a collapse-risk day's stretch outcome
+    # is not a trustworthy under-ambition signal.
+    uwin = [r for r in _rows_in_window(cv_rows, ref_date, GATES_V1["window_days"])
+            if r.get("count") != "UNRELIABLE"]
+    stretch_days = 0
+    s_total = k_total = 0
+    for r in uwin:
+        sk = str(r.get("stretch", ""))
+        if "/" in sk:
+            s_str, k_str = sk.split("/", 1)
+            if s_str.isdigit() and k_str.isdigit() and int(k_str) > 0:
+                stretch_days += 1
+                s_total += int(s_str)
+                k_total += int(k_str)
+    stretch_rate = round(s_total / k_total, 3) if k_total else None
+    tripwire = bool(stretch_rate is not None
+                    and stretch_rate >= GATES_V1["under_ambition_stretch_rate"]
+                    and stretch_days >= GATES_V1["under_ambition_min_days"])
+    under_ambition = {
+        "stretch_rate": stretch_rate, "stretch_offered_days": stretch_days,
+        "tripwire": tripwire,
+        "flag": "widen sizing" if tripwire else None,
+        "status": "insufficient-data" if stretch_days < GATES_V1["under_ambition_min_days"] else "measuring",
+    }
+
+    return {
+        "computed_at": datetime.now().isoformat(timespec="seconds"),
+        "reference_date": ref_date.isoformat(),
+        "gates_version": "GATES_V1_PUBLIC",
+        "capacity": capacity,
+        "agenda_composition": agenda,
+        "priority_par": priority,
+        "under_ambition": under_ambition,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="PULSE Priority Calculator")
     parser.add_argument(
@@ -1331,6 +2347,21 @@ def main():
     parser.add_argument("--briefing", action="store_true",
                         help="Compact output for /pulse briefing (default: full diagnostic output)")
     parser.add_argument("--cache", help="Write output to this path (in addition to stdout)")
+    # Stage B / capacity-proposer flags
+    parser.add_argument("--capacity-input",
+                        help="Graded capacity JSON (path or inline) → Stage-B budget vector")
+    parser.add_argument("--propose", action="store_true",
+                        help="Emit layered agenda proposal (deadline/floor/core/stretch/slack)")
+    parser.add_argument("--propose-out",
+                        help="Override path for the proposal artifact (default: Daily/cache/DATE-proposal.json)")
+    parser.add_argument("--verdict", action="store_true",
+                        help="Mechanical capacity verdict from a frozen proposal + --actual")
+    parser.add_argument("--actual", help="JSON actuals for --verdict")
+    parser.add_argument("--gates", action="store_true",
+                        help="Compute-only phase/gate status (GATES_V1_PUBLIC); no writes, no scheduling")
+    parser.add_argument("--candidates", action="store_true",
+                        help="Emit the gradeable candidate pool (deadline + floor + top-ranked) "
+                             "with exact item ids; read-only")
     args = parser.parse_args()
 
     # Vault path resolution: --vault flag > $PULSE_VAULT env var > ./pulse-vault default
@@ -1338,6 +2369,35 @@ def main():
     vault_path = Path(raw_vault).resolve()
 
     today = date.fromisoformat(args.date) if args.date else date.today()
+
+    # ── --verdict: pure function over two JSON blobs (bypasses vault loading) ──
+    if args.verdict:
+        prop_path = (Path(args.propose_out) if args.propose_out
+                     else vault_path / "Daily" / "cache" / f"{today.isoformat()}-proposal.json")
+        if not prop_path.exists():
+            print(json.dumps({"skipped": "no frozen proposal artifact", "path": str(prop_path)}, indent=2))
+            return
+        try:
+            proposal = json.loads(prop_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as e:
+            print(json.dumps({"error": f"malformed proposal JSON: {e}", "path": str(prop_path)}, indent=2))
+            return
+        try:
+            actual = json.loads(args.actual) if args.actual else {}
+        except json.JSONDecodeError as e:
+            print(json.dumps({"error": f"malformed --actual JSON: {e}", "arg": args.actual}, indent=2))
+            return
+        print(json.dumps(compute_verdict(proposal, actual, today), indent=2))
+        return
+
+    # ── --gates: compute-only phase status (reads calibration + daily logs) ──
+    if args.gates:
+        if args.propose or args.capacity_input:
+            print(json.dumps({"error": "--gates is standalone"}, indent=2))
+            return
+        print(json.dumps(compute_gates(vault_path, today), indent=2))
+        return
+
     cal_offsets: dict[str, float] = {}
     if args.calibration_offsets:
         try:
@@ -1346,6 +2406,27 @@ def main():
             print("Warning: could not parse --calibration-offsets", file=sys.stderr)
 
     all_warnings: list[dict] = []
+
+    # Parse graded capacity input up-front (shared by capacity-input + propose paths).
+    graded: dict = {}
+    if args.capacity_input:
+        graded, graded_warnings = parse_graded_input(args.capacity_input)
+        all_warnings.extend(graded_warnings)
+        rv = graded.get("rubric_version")
+        if rv is not None and rv not in KNOWN_RUBRIC_VERSIONS:
+            all_warnings.append({"type": "rubric_version_mismatch", "detail": f"unknown rubric_version {rv!r}"})
+
+    # ── --capacity-input WITHOUT --propose: standalone Stage-B over the graded pool ──
+    if args.capacity_input and not args.propose:
+        if not (graded.get("sleep") or {}):
+            print(json.dumps({"skipped": "no sleep input"}, indent=2))
+            return
+        result = compute_capacity(graded, graded.get("items", []), today)
+        if result is None:
+            print(json.dumps({"skipped": "no sleep input"}, indent=2))
+            return
+        print(json.dumps(to_serializable(result), indent=2))
+        return
 
     # Phase B: Load Maps
     maps, map_warnings = load_maps(vault_path, today)
@@ -1383,6 +2464,39 @@ def main():
 
     # Apply effort cap for Important Items display
     important_items = apply_effort_cap(items, cap=args.effort_cap)
+
+    # ── --candidates: emit the gradeable candidate pool (read-only, no writes) ──
+    if args.candidates:
+        floor_path = vault_path / "Templates" / "routine-floor.md"
+        floor_items, floor_warnings = parse_routine_floor(floor_path, today.weekday())
+        all_warnings.extend(floor_warnings)
+        deadline_items = collect_deadline_items(active_notes, maps, today)
+        candidates = build_candidate_pool(important_items, floor_items, deadline_items)
+        print(json.dumps({
+            "reference_date": today.isoformat(),
+            "candidates": candidates,
+            "warnings": all_warnings,
+        }, indent=2))
+        return
+
+    # ── --propose: layered agenda draft (deadline/floor/core/stretch/slack) ──
+    if args.propose:
+        floor_path = vault_path / "Templates" / "routine-floor.md"
+        floor_items, floor_warnings = parse_routine_floor(floor_path, today.weekday())
+        all_warnings.extend(floor_warnings)
+        deadline_items = collect_deadline_items(active_notes, maps, today)
+        proposal = build_proposal(
+            important_items, deadline_items, floor_items,
+            graded if graded else None, today, vault_path,
+        )
+        if all_warnings:
+            proposal["warnings"] = all_warnings
+        out_path = (Path(args.propose_out) if args.propose_out
+                    else vault_path / "Daily" / "cache" / f"{today.isoformat()}-proposal.json")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(proposal, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps(proposal, indent=2))
+        return
 
     # Assemble output
     if args.briefing:

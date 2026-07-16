@@ -1,6 +1,6 @@
 ---
 name: birdseyereview
-description: Full landscape audit — scans all Maps with zero suppression. Use for periodic reviews, not daily agenda setting.
+description: Full landscape audit — scans all Maps with zero suppression. Use for periodic reviews, not daily agenda setting. Boundary vs. /landscape — that skill is a cache-first recall of ONLY today's /pulse-folded candidate pool (post-graduation); this skill is a full sweep across all Maps, any day, independent of what /pulse folded today.
 user-invocable: true
 model: sonnet
 allowed-tools: Read, Glob, Grep, Edit, Write
@@ -83,3 +83,6 @@ This path is pure Surface — show progress and invite adjustment.
 
 ### Relationship to /pulse
 /pulse builds a focused daily agenda conversationally (8-15 items). /birdseyereview shows EVERYTHING — useful when you need the full instrument panel, not the cockpit.
+
+### Relationship to /landscape
+Post-graduation, `/pulse` folds its ranked committed pool behind `/landscape` — a same-day, cache-first recall of exactly what today's draft left out. `/birdseyereview` is not that: it is a fresh, zero-suppression sweep of every Map, any day, whether or not `/pulse` ran or folded anything today. Reach for `/landscape` to recover today's fold cheaply; reach for `/birdseyereview` for a periodic full-landscape review.
