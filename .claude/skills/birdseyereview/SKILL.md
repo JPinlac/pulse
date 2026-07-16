@@ -2,8 +2,7 @@
 name: birdseyereview
 description: Full landscape audit — scans all Maps with zero suppression. Use for periodic reviews, not daily agenda setting.
 user-invocable: true
-model: opus
-effort: max
+model: sonnet
 allowed-tools: Read, Glob, Grep, Edit, Write
 srsa: Sense+Surface
 ---

@@ -60,9 +60,9 @@ Do NOT attempt to read INDEX.md, run pulse-calc.py, or process Inbox before boot
 
    **Phases B–D**:
    ```bash
-   uv run pulse-engine/scripts/pulse-calc.py --vault "${PULSE_VAULT:-./pulse-vault}" --briefing --cache "${PULSE_VAULT:-./pulse-vault}/Daily/cache/$(date +%Y-%m-%d)-calc.json"
+   uv run pulse-engine/scripts/pulse-calc.py --vault "${PULSE_VAULT:-./pulse-vault}" --briefing --cache "${PULSE_VAULT:-./pulse-vault}/Daily/cache/$(date +%Y-%m-%d)-calc.json" > /dev/null
    ```
-   Read the cached file directly (`Daily/cache/YYYY-MM-DD-calc.json`) — single Read, ~600 lines. Key fields: `efforts` (weights, loops, staleness), `important_items` (effort-capped, scored), `waiting` (with `gate` and `days`), `batches` (with `gated` flag), `resurfacing`, `warnings`.
+   The script's stdout is redirected to `/dev/null` — the cache file is the single source, so reading it (below) avoids loading the ~600-line payload into context twice. Read the cached file directly (`Daily/cache/YYYY-MM-DD-calc.json`) — single Read, ~600 lines. Key fields: `efforts` (weights, loops, staleness), `important_items` (effort-capped, scored), `waiting` (with `gate` and `days`), `batches` (with `gated` flag), `resurfacing`, `warnings`.
 
    On subsequent `/pulse` calls the same day, read the cache file instead of re-running the script (same freshness gate as before — `last_refreshed` in Daily note).
 
