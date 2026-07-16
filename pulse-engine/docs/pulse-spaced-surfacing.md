@@ -9,7 +9,7 @@ created: 2026-03-30
 updated: 2026-04-11
 timescale: weekly
 tags: [spaced-repetition, cognition, surfacing, design]
-informs: [[pulse-capacity-model]], [[pulse-priority-proposals-2026-03-25]], [[pulse-architecture-improvements]]
+informs: the capacity/resurfacing model, priority-engine design proposals, and general architecture design
 ---
 
 # Spaced Surfacing
@@ -52,7 +52,7 @@ Things are allowed to fall. The mentally tough part isn't dropping something —
 - What's the right cadence? Probably effort-specific — a project waiting on an external dependency might need weekly; a fully dormant hobby might need monthly
 - Should this be a /pulse feature or a separate nudge mechanism?
 - How to distinguish from noise? The nudge should feel like an invitation, not a task
-- In pulse-cli graph model: dormant nodes with high connectivity (many edges) are prime candidates — the graph structure could identify which dormant efforts have the richest retrieval potential
+- A dormant effort with high connectivity to other active efforts — many shared threads, dependencies, or recurring cross-references — is a prime candidate for spaced surfacing: that connectivity is a proxy for retrieval potential, since it means more of the effort's context stays alive elsewhere even while the effort itself is quiet
 
 ## Cognitive Science Grounding
 
@@ -62,6 +62,6 @@ Things are allowed to fall. The mentally tough part isn't dropping something —
 - The psypost ChatGPT study (2026) found retention drops without re-engagement — spaced surfacing is the re-engagement mechanism for efforts where building isn't happening yet
 
 ## Informs
-- [[pulse-capacity-model]] — dormant efforts and retrieval cost shape how the capacity filter handles re-entry
-- [[pulse-priority-proposals-2026-03-25]] — spaced surfacing is a candidate mechanism for the priority/resurfacing layer
-- [[pulse-architecture-improvements]] — effort-level surfacing (vs item-level resurfacing) is a structural addition
+- The capacity/resurfacing model — dormant efforts and retrieval cost shape how the capacity filter handles re-entry
+- Priority-engine design proposals — spaced surfacing is a candidate mechanism for the priority/resurfacing layer
+- General architecture design — effort-level surfacing (vs item-level resurfacing) is a structural addition

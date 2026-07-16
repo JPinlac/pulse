@@ -47,7 +47,7 @@ Read-only. `/landscape` exists **only because graduation exists** — pre-gate, 
 
 4. **No re-filtering, no re-ranking.** The candidate pool (cached or live) is already the exact set `/pulse` drew from or would draw from — deadline items first, then floor, then top-ranked core (`CANDIDATE_POOL_RANKED`). Render it as-is; do not apply a new suppression pass on top of an already-suppressed-and-now-recalled list. That would be suppression squared.
 
-5. **No residue field.** The candidate pool has no near-miss/residue concept (dropped from the port — pulse-cli-only). Do not fabricate a "just missed the cut" line; the pool is either in or not in.
+5. **No residue field.** The candidate pool has no near-miss/residue concept (dropped from the port). Do not fabricate a "just missed the cut" line; the pool is either in or not in.
 
 ### Surface
 
