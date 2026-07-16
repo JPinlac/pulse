@@ -2,8 +2,7 @@
 name: surfaceUncertainty
 description: Surface thinking-trace uncertainty — competing interpretations, course corrections, and reification signals. Invoked by Sati detection or deliberately when processing new information.
 user-invocable: true
-model: opus
-effort: max
+model: sonnet
 allowed-tools: Read, Write, Edit, Bash
 srsa: Sati
 ---

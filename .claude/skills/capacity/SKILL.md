@@ -2,8 +2,7 @@
 name: capacity
 description: Capacity prediction — backtest agenda against sleep/practice/load signals. Run after agenda is confirmed. Asks for inputs, classifies items, computes budget vector, logs to session log.
 user-invocable: true
-model: opus
-effort: max
+model: sonnet
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 srsa: Sense+Surface+Act
 ---
