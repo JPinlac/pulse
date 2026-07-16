@@ -2,8 +2,7 @@
 name: triage
 description: Auto-process Inbox items into Notes and Maps — no confirmation needed. Assigns efforts, creates Notes, updates Maps, reports what was done.
 user-invocable: true
-model: opus
-effort: max
+model: sonnet
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 srsa: Act+Sense
 ---
