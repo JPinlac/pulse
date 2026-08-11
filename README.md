@@ -18,6 +18,8 @@ Optionally, `/focus [effort]` drops you into deep flow on a single effort — in
 
 ## Quick Setup
 
+> **No Claude subscription?** PULSE also runs on [OpenCode](https://opencode.ai) with a fully local model — see [docs/SETUP-OPENCODE-LOCAL.md](docs/SETUP-OPENCODE-LOCAL.md).
+
 1. **Clone this repo**:
    ```bash
    git clone <repo-url> pulse
