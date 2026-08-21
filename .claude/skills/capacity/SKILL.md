@@ -1,171 +1,125 @@
 ---
 name: capacity
-description: Capacity prediction — backtest agenda against sleep/practice/load signals. Run after agenda is confirmed. Asks for inputs, classifies items, computes budget vector, logs to session log.
+description: Manual capacity backtest — re-run capacity sizing against a confirmed agenda. Grades raw sleep/practice prose with a Sonnet grader (per the rubric), writes graded JSON, then runs pulse-calc.py --capacity-input for the budget vector, count range, binding constraint, and flags. /pulse sizes the proposal inline (step 3.5); /capacity is the on-demand re-run against the committed set.
 user-invocable: true
 model: sonnet
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
-srsa: Sense+Surface+Act
+srsa: Sense+Route+Surface+Act
 ---
 
-## Capacity Prediction
+## Capacity Backtest (manual)
 
-Backtest a confirmed agenda against capacity signals. The agenda is built from intuition; this protocol applies capacity math as a backtest, not an input (per 2026-04-16 methodology correction — collapsing these conflates two independent signals).
+`/pulse` capacity-sizes the day's draft **inline** during the proposal build (its step 3.5). `/capacity` is the **on-demand re-run** — backtest a *confirmed, committed* agenda against the day's capacity signals, mid-day or whenever the agenda has been edited since it was first sized. Same two-stage pipeline, run against the committed set instead of the candidate pool.
 
-**Precondition**: Agenda exists in today's Daily Note. If no agenda, respond: "No agenda in today's Daily Note. Build the agenda first (`/pulse` → confirm direction), then run `/capacity`."
+The agenda is built from intuition and dyadic negotiation; this protocol applies capacity math as a **backtest, not an input** — sizing and selection are independent signals, and collapsing them conflates two things the calibration record needs kept apart.
 
-**Reference doc**: `docs/pulse-effort-capacity-inference.md` — tier definitions, budget caps, load multipliers, avoidance patterns, resistance completion modes. Read once per session (Step 1); do not re-derive from scratch.
+**Precondition**: an agenda exists in today's Daily Note. If none, respond: *"No agenda in today's Daily Note. Build the agenda first (`/pulse` → confirm direction), then run `/capacity`."*
 
-**Backtest day number**: Read `Notes/pulse-priority-calibration.md` for the current capacity backtest day count. Increment by 1 for today's entry.
+### The two-stage pipeline
 
-### Sense — Gather Inputs
+```
+raw sleep/practice prose
+  → Stage A: Sonnet grader sub-agent (rubric) → graded JSON
+  → written to Daily/cache/YYYY-MM-DD-graded.json
+  → Stage B: pulse-calc.py --capacity-input <graded.json>
+  → budget vector · count range · binding constraint · flags
+```
+
+The division is strict: **the grader does zero arithmetic** (tiers, tags, day-context flags only); **the script does all arithmetic** (load derivation, multipliers, per-item costs, budgets, count range). Neither stage does the other's job.
+
+**Reference docs** (read once per session):
+- `pulse-engine/docs/pulse-capacity-rubric.md` — the versioned Stage-A grader contract and graded-JSON output shape. Canonical for tier vocabularies, tags, and day-context flags.
+- `pulse-engine/docs/capacity-proposer.md` — the capacity proposer's design/operating guide (load model, layers, the graduation gate).
+
+### Sense — Gather Raw Signals
 
 **Step 1 — Parallel reads** (all independent, read simultaneously):
 
 | Source | What to extract |
 |--------|----------------|
-| Today's Daily Note | Agenda items, frontmatter: `sleep_hours`, `sleep_quality`, `samatha_minutes`, `samatha_quality`, `insight_minutes`, `insight_quality` |
-| Prior 3 Daily Notes (D-1, D-2, D-3) | `load_state`, `items_completed`, `items_deferred`, `efforts_touched`, sleep/samatha/insight frontmatter — 3-day recovery trajectory |
-| Prior 3 session logs (D-1, D-2, D-3) | Capacity inferences, recompute deltas, Sati entries — running structural comparison and backtest accuracy |
-| Today's session log | Existing entries (avoid duplication) |
-| Today's cache (`Daily/cache/YYYY-MM-DD-calc.json`) | Weight landscape, important items with due dates, waiting items — ambient load sources |
-| `docs/pulse-effort-capacity-inference.md` | Framework reference: tier definitions, budget caps, load multipliers |
+| Today's Daily Note | **Committed agenda items** (the set to backtest); capacity frontmatter: `sleep_hours`, `sleep_quality`, `samatha_minutes`, `samatha_quality`, `insight_minutes`, `insight_quality`; `load_state` |
+| Recent Daily Notes (last 2–3 days) | Sleep/practice frontmatter, `load_state`, completions/deferrals — the multi-day recovery trajectory |
+| Recent session logs (last 2–3 days) | Prior `CAPACITY-FROZEN`/`CAPACITY-VERDICT` rows — running backtest accuracy and phase context |
+| Today's cache (`Daily/cache/YYYY-MM-DD-calc.json`) | Due/deadline items, waiting items — ambient load sources |
 
-The 3-day window captures the burst-and-rest rhythm (doc: "2-3 days heavy depth -> 1-3 days recovery"). A single prior day can't distinguish "start of sprint" from "mid-recovery" — 3 days shows the arc.
+The multi-day window is what lets the grader set `day_context` (`sprint_tail`, `cold_start_days`, `recovery`) and `sleep_3day_avg` / `sleep_trend`. A single day can't distinguish "start of a sprint" from "mid-recovery"; the window shows the arc.
 
-**If sleep/samatha not in frontmatter**: Ask the user for capacity inputs:
-- Sleep: hours and quality (e.g., "6 hours, fair")
-- Samatha: minutes and quality (e.g., "15 min, high")
-- Insight: minutes and quality (e.g., "5 min, good")
+**If sleep/practice not in frontmatter**: ask the user for a raw check-in, in their own words —
+- Sleep: hours and how it felt (e.g. *"6.5, kept waking"*)
+- Concentration practice (samatha): minutes and depth (e.g. *"15 min, settled but not absorbed"*)
+- Insight practice: minutes and quality (e.g. *"5 min, one clear noticing"*)
 
-After receiving, write to today's Daily Note frontmatter: `sleep_hours`, `sleep_quality`, `samatha_minutes`, `samatha_quality`, `insight_minutes`, `insight_quality`.
+Write the raw prose to today's Daily-note frontmatter under the field names above (`sleep_hours`, `sleep_quality`, `samatha_minutes`, `samatha_quality`, `insight_minutes`, `insight_quality`). **Never fabricate a sleep number** — a missing sleep signal means the day's capacity is *skipped*, and an invented number poisons the calibration substrate. These field names match the shipped code and rubric; do not rename or invent new ones.
 
-### Sense — Assess Load Multiplier
+**The model, plainly.** Concentration practice modulates **cognitive load tolerance** — a settled mind carries more attentional load without offsetting sleep debt, and the absorption ladder (`access → sub-j1 → j1-j3 → j4-plus`) graduates that dampener, with `j1-j3` the strongest and deeper attainments left deliberately unmapped (`deep-attainment-watch`). Insight practice thins resistance across life; in the current rubric it is a **candidate** signal — graded honestly, logged (`insight_lift_candidate`), but not yet given arithmetic weight. The practice dampener is cognitive-specific: it must **never** soften an embodied/physical-relational risk. Those axes are independent and graded independently.
 
-**Step 2 — Load state assessment**:
+### Route — Stage A: Grade (Sonnet sub-agent)
 
-1. Map `sleep_hours` + `sleep_quality` to baseline load
-2. Read `samatha_minutes` + `samatha_quality` — modulates absorption capacity, not throughput (practice doesn't offset sleep debt but supports load tolerance)
-   Read `insight_minutes` + `insight_quality` — modulates resistance budget. Insight thins hindrances across life, reducing activation energy for resistant items. Samatha enables insight; insight reduces resistance. The pair is the unit.
-3. Scan for ambient load sources:
-   - Active adversarial threads (contractor, overdue-with-visibility items)
-   - Upcoming time-sensitive items (due dates in cache, radar items in Daily Note)
-   - Prior day's `load_state` and recovery trajectory (sprint tail, multi-day accumulation)
-4. Read the 3-day trajectory:
-   - Sleep trend (improving / degrading / flat)
-   - Load state trend (D-3 -> D-2 -> D-1 -> today)
-   - Completion rate trend (are outcomes degrading despite similar agendas? = accumulating load)
-   - Sprint/rest phase detection: 2-3 heavy days -> expect recovery need; 1-2 recovery days -> capacity returning
-   - Practice consistency (misses in the window = disruption markers per doc)
-5. Assign multiplier:
+**Step 2 — Dispatch a Sonnet grader sub-agent** (`model: "sonnet"`) per `pulse-engine/docs/pulse-capacity-rubric.md`.
 
-| Load | Depth mult | Resistance mult |
-|------|-----------|----------------|
-| Low | 1.0 | 1.0 |
-| Moderate | 0.7 | 0.6 |
-| High | 0.4 | 0.3 |
-| Recovery | 0.1 | 0.0 |
+- **Grader input**: the raw sleep/practice prose + the **committed agenda items** (`id`, `label`, `effort`) + the multi-day trajectory context from Step 1.
+- **Grader output**: exactly one graded-JSON object per the rubric — nothing else. It carries `sleep` / `samatha` / `insight` tiers (closed vocabularies), per-dimension `confidence`, `day_context` flags, `sleep_3day_avg`, `sleep_trend`, per-item `{layer_hint, depth_tier, resistance_tier, tags}`, and `raw_prose` echoed verbatim. `rubric_version` travels **inside** the JSON — there is no `--rubric` flag. The grader does **zero arithmetic**.
+- **Backtest the committed set**: because `/capacity` scores what the user actually committed (not the `/pulse` candidate pool), the graded object's `items` array **must be the committed agenda items**. Stage B's standalone path scores exactly `items`.
+- **Write** the graded object to `Daily/cache/YYYY-MM-DD-graded.json`. This overwrites any draft-time graded file `/pulse` wrote — harmless: the frozen proposal already captured the draft-time grade, and the committed-set grade is the more accurate backtest input.
 
-6. State rationale — include trajectory signal, not just today's snapshot. What pulled toward/away from the chosen level.
+Closed tier vocabularies (grader emits exactly these — full anchors in the rubric):
 
-### Route — Classify and Compute
+- **Sleep**: `excellent | good | fair | below-avg | poor | depleted`
+- **Samatha** (concentration depth): `none | access | sub-j1 | j1-j3 | j4-plus`
+- **Insight**: `none | some | good`
+- **Depth** (per item): `heavy | substantial | standard | light | minimal`
+- **Resistance** (per item): `high | moderate | low`
+- **Tags** (per item, subset): `generative | momentum | primed | partial-carry | embodied`
 
-**Step 3 — Per-item classification**:
+Missing samatha/insight → the grader omits that key (Stage B treats it as `none`). Missing sleep → the grader does not fabricate; Stage B will return `{"skipped": "no sleep input"}`.
 
-For each agenda item assign:
-- **Depth tier**: Heavy 0.85 / Substantial 0.50 / Standard 0.20 / Light 0.08 / Minimal 0.00
-- **Resistance tier**: High 0.85 / Moderate 0.40 / Low-None 0.00
-- Rationale for non-obvious classifications. Common patterns:
-  - "Resistance cost paid once per effort-session" (second item in same effort = 0.00)
-  - "Time-boxed to Standard" (substantial topic constrained by window)
-  - "Intrinsic pull = low resistance" (pulse design, crisis response)
-  - "Effort-level resistance inheritance" (new-codebase cold-start, unfamiliar domain)
-- Separate committed items from stretch items (agenda already marks these)
-- **Between Tasks items are nudges, not commitments.** They appear on the agenda for visibility but do not count toward the prediction denominator, are not classified in the budget vector, and are never logged as "deferred" when they don't happen. The completion rate, budget math, and per-item predictions apply only to committed agenda items.
+### Route — Stage B: Compute (deterministic script)
 
-Output as a table:
+**Step 3 — Run the standalone capacity backtest.** No `--propose` — this scores the committed set; it does **not** rebuild or re-freeze the draft proposal:
 
-| Item | Effort | Depth | D cost | Resistance | R cost |
-|------|--------|-------|--------|------------|--------|
-
-**Step 4 — Budget vector**:
-
-```
-depth_budget      = 1.0 x load_multiplier_depth
-resistance_budget = 1.0 x load_multiplier_resistance
-
-depth_used       = sum(committed item depth costs)
-resistance_used  = sum(committed item resistance costs)
+```bash
+uv run pulse-engine/scripts/pulse-calc.py --vault "${PULSE_VAULT:-./pulse-vault}" \
+  --capacity-input "${PULSE_VAULT:-./pulse-vault}/Daily/cache/$(date +%Y-%m-%d)-graded.json"
 ```
 
-- Check both constraints independently — overflow in either is a fail
-- If stretch items exist, compute a second vector including them
-- Flag >=80% as "edge", >100% as "over_budget"
-- Output both vectors (committed-only and with-stretch)
+The script consumes the graded JSON and does **all** the arithmetic — load-tier derivation (from `hours` *and* `quality`, worse-of-the-two winning), the samatha depth-lift, per-item depth/resistance costs (tier → cost, the "resistance paid once per effort" discount, the one-high-resistance-per-day cap, tag mechanics), the budget vector, count range, and flags. Read from its JSON:
 
-**Step 5 — Structural comparison (3-day window)**:
+- **Budget vector**: `depth_budget` / `resistance_budget`, `depth_used` / `resistance_used`, `depth_ratio` / `resistance_ratio`, `depth_status` / `resistance_status` (`within | edge | over`).
+- **Load**: `load`, `load_base`, `samatha_lift`, `mult_depth` / `mult_res`.
+- **Binding constraint**: `binding` ∈ `depth | resistance | both | neither`.
+- **Count range**: `count_low`–`count_high` / `committed_total`, `count_unreliable`.
+- **Flags**: `flags` (e.g. `over-prediction`, `collapse-risk`, `physical-relational-at-risk`, `deep-attainment-watch`, `fatigue-exempt`), `physical_relational_ids`, `insight_lift_candidate`, and per-item `item_costs[]` (`depth_cost` / `resistance_cost` + per-item flags like `fatigue-exempt`, `depth-underscore`).
 
-- D-3 -> D-2 -> D-1: What was the trajectory? (escalating depth, recovery arc, flat maintenance)
-- Binding constraints across the window: Was it the same dimension each day, or shifting? (persistent resistance bottleneck = effort-level pattern; rotating = compositional)
-- Backtest accuracy across the window: How many predictions matched outcomes? Running hit rate builds the backtest signal for phase graduation (doc: "30+ backtested days with structured capture")
-- Rhythm detection: Are we in sprint, recovery, or steady-state? Does today's agenda match the phase? (Sprint agenda on recovery day = collapse risk per doc)
-- Load accumulation: Did load_state escalate across the 3 days despite similar agendas? (= ambient or baseline load building, not visible from a single day)
+If the script returns `{"skipped": "no sleep input"}`, report that capacity can't run today (no sleep signal) and stop. Do not fabricate an input to force a number.
 
-Output as a structured comparison table:
+**Two commands this is NOT.** Do **not** run `--propose` here — that rebuilds and re-freezes the day's proposal artifact, clobbering the frozen prediction `/close` scores against. And `--verdict` is close-time outcome scoring (it reads the frozen proposal + `--actual` and does **not** take `--capacity-input`) — it belongs to `/close`, not to a manual backtest.
 
-| Day | Sleep | Practice | Load | Predicted | Actual | Bottleneck |
-|-----|-------|----------|------|-----------|--------|------------|
+### Surface — Present the Backtest
 
-**Step 6 — Day character**:
+**Step 4 — Concise interpretation** (present the reading, not the raw JSON):
 
-- Map to day mode: Recovery / High-load / Normal low-load / Sprint
-- Cognitive vs physical item ratio
-- Efforts touched (batch spread — 4+ = wishlist flag)
-- Name the day's depth slot occupant
-- Name the day's resistance slot occupant (if any)
-
-### Surface — Present Prediction
-
-**Step 7 — Disruption tolerance (30% derailment check)**:
-
-- Which items absorb disruption gracefully? (flexible timing, low-depth, parallelizable with life)
-- Which items are the hard floor? (externally accountable, time-sensitive, deadline-forced)
-- What acute load vectors exist? (active adversarial threads, approaching events, waiting items that could unblock mid-day)
-- Does the agenda degrade gracefully (tiered) or catastrophically (flat)?
-
-**Step 8 — Per-item prediction**:
-
-For each item, predict: **complete** / **defer** / **at risk**
-- Apply resistance completion modes where relevant (deadline / momentum / reframe)
-- Name the most likely deferred item(s) if any dimension is over-budget
-- State expected completions as N/M
-
-**Step 9 — Watch conditions**:
-
-- **Upside**: what would open budget? (depth item finishes early, load lifts)
-- **Downside**: what would close budget? (acute event, ambient load escalation)
-- **Mid-day signals**: anything that would change the prediction if observed
-
-**Present to the user**: Concise summary — load state, budget status (within/edge/over and which dimension), expected completions N/M, key watch condition. Not the full log — just the prediction and what would change it.
+- **Load state** — the derived `load`, and if the samatha lift moved it off `load_base`, say so ("high, lifted to effective moderate-depth by a `j1-j3` sit").
+- **Budget status** — `within` / `edge` / `over` on each dimension, and which is `binding`.
+- **Count range vs. committed** — "sized for N–M, agenda commits K" → over / at / under budget. Note `count_unreliable` if the collapse-risk flag is up.
+- **Flags that matter** — `collapse-risk`, `over-prediction`, `physical-relational-at-risk` (name the at-risk items by label), `deep-attainment-watch`.
+- **Watch condition** — the item most likely to slip (highest-cost or flagged in `item_costs`), and what would open or close budget mid-day.
 
 ### Act — Log
 
-**Step 10 — Write to session log**:
+**Step 5 — Append to the session log** (inline — single-file append). Add `### Capacity Backtest — HH:MM` to `Daily/logs/YYYY-MM-DD-log.md`:
 
-Write inline (main session — single-file session-log append). Append `### Capacity Prediction — HH:MM` to `Daily/logs/YYYY-MM-DD-log.md` with all sections structured as:
+1. Graded tiers — sleep / samatha / insight + per-dimension confidence
+2. `rubric_version` + `calc_version` (both carried on the CapacityResult — segment audits across rework boundaries)
+3. Load + `samatha_lift`
+4. Budget vector (both dimensions — budget, used, ratio, status)
+5. Count range / committed total + binding constraint
+6. Flags + `physical_relational_ids` + per-item `item_costs`
 
-1. Backtest day number
-2. Load state inputs + rationale
-3. Per-item classification table
-4. Budget vector(s) — committed and with-stretch
-5. Structural comparison (3-day table + trajectory narrative)
-6. Day character
-7. Disruption tolerance
-8. Per-item predictions + expected N/M
-9. Watch conditions (upside / downside / mid-day signals)
+Reading the log alone must answer "how was capacity sized for the committed agenda on this date." Also write `load_state` (low / moderate / high / recovery) to today's Daily-note frontmatter.
 
-Write `load_state` to today's Daily Note frontmatter (low / moderate / high / recovery).
+Do **not** write BCR / `CAPACITY-VERDICT` / freeze rows here. Freezing the prediction is `/pulse`'s job (step 3.5); scoring the outcome is `/close`'s (`--verdict`). `/capacity` is a **read-only backtest** over an already-frozen day — a sanity re-check, not a gating write.
 
 ### Integration
 
-- **After `/pulse`**: agent knows to suggest `/capacity` once agenda is confirmed and sleep/samatha inputs are available. This is convention, not a hook — the agent prompts, not the system.
-- **During `/close`**: backtest outcome is logged — predicted N/M vs actual, which dimension was the binding constraint, whether the prediction matched. This feeds the running accuracy signal for phase graduation.
+- **After `/pulse`**: `/pulse` sizes and freezes the draft inline at step 3.5 (its own Sonnet-grader dispatch + `--propose`). Suggest `/capacity` when the user wants to re-check a committed or since-edited agenda against the day's real signals. Convention, not a hook — the agent prompts, the system doesn't force it.
+- **Before `/close`**: `/close` scores the frozen proposal (`--verdict`: predicted vs. actual, binding constraint, whether the prediction held) — that feeds the graduation gate (BCR / reliable-days). `/capacity` does **not** feed that path; it is an on-demand sanity re-run, not a calibration write.

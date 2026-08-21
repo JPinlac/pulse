@@ -141,7 +141,7 @@ Load isn't homogeneous. It arrives through three distinct pathways with differen
 **Acute load** — unforeseen SRSA trajectory misalignment events. **This is the signal of real engagement with the world, not a failure mode.** Acute load arrives because trajectories — yours and others' — actually meet: contractors, colleagues, family, strangers, systems not fully under your control. A day with zero acute load usually means you didn't engage with anything uncertain or adversarial. The goal isn't to prevent acute load (which would require disengagement); it's to have enough capacity to absorb it without collapse.
 
 Sources:
-- **Trajectory collision** with another person (e.g. a repair confrontation where a new inspection reveals a problem that escalates a passive waiting-item into an active adversarial pursuit mid-day, producing evidence that strengthens your position)
+- **Trajectory collision** with another person (e.g. a repair dispute where new information surfaces mid-day that escalates a passive waiting-item into active pursuit, producing evidence that strengthens the case)
 - **Alignment divergence discovered** in external parties (e.g. encountering unexpected defensiveness — a shared frame turning out to be unshared; the divergence itself is valuable calibration data about the audience)
 - **Sudden realization** that a trajectory you were committed to isn't landing the way you modeled it
 - **External imposition** of a new constraint (legal, medical, family obligation)
@@ -194,7 +194,7 @@ Depth capacity is available but partially consumed by the resistance cost. The r
 
 **High-load day** (adversarial dispute active, sleep debt, sick, multi-stressor stack)
 
-Depth and resistance capacity both degrade. Output shifts toward **minor actions, closure items, and crisis response** — work that advances state without requiring new cognitive load. The clearest illustration: a day that is sick + dispute-escalating + carrying a multi-day blocked item, where everything *clears* (backlog resolved) but zero new depth is initiated. The work is clearing the backlog, not opening new work.
+Depth and resistance capacity both degrade. Output shifts toward **minor actions, closure items, and crisis response** — work that advances state without requiring new cognitive load. The clearest illustration: a day combining illness, an escalating dispute, and a multi-day blocked item, where everything *clears* (backlog resolved) but zero new depth is initiated. The work is clearing the backlog, not opening new work.
 
 Attempting deep or high-resistance work on high-load days doesn't just fail — it **compounds load for the next day** by adding deferred-item friction to existing load. The counterintuitive move is to pre-defer during agenda creation, not retroactively. A 3-item agenda of closure/resolution items completes cleanly on a high-load day; a 7-item agenda of ambitious work collapses and leaves residue that taxes tomorrow.
 
@@ -418,10 +418,10 @@ Hypothesis: practice minutes correlate with **load tolerance**, not throughput. 
 Baseline observation (illustrative, from a post-practice-restart window):
 - Qualitative shift in Sati entries (retrospective reframe → real-time course correction)
 - Somatic awareness appeared ("chest tightness", "smriti as detection dye")
-- High-load days didn't collapse (sick + dispute escalation + a multi-day blocked item, yet the backlog still cleared)
-- Pre-practice high-load days consistently collapsed (a dispute-consumed 0/7 day; a sleep-debt + deferral day)
+- High-load days didn't collapse (illness, an escalating dispute, and a multi-day blocked item all present at once, yet the backlog still cleared)
+- Pre-practice high-load days consistently collapsed (a day fully consumed by an escalating dispute, 0/7 items completed; a sleep-debt + deferral day)
 
-The capture pattern: minimum 15 min default, 20/30 min annotations when longer. Zero when missed. The zero is as informative as the positive — miss-days correlate with known disruption (a chaotic day, a social-drinking day).
+The capture pattern: minimum 15 min default, 20/30 min annotations when longer. Zero when missed. The zero is as informative as the positive — miss-days correlate with known disruption (a high-disruption day, a day with unplanned social obligations).
 
 ### insight_minutes (daily)
 
@@ -658,7 +658,7 @@ Post-practice: load degrades depth but doesn't eliminate it; resistance is still
 Practice period after a restart (small sample). Observed changes:
 
 - **Sati density**: increased dramatically (multiple entries on a single day vs sparse pre-practice)
-- **Sati quality**: shifted from retrospective reframe ("procrastination was skillful discernment") to real-time course correction ("trust-first principle corrected premature optimization three times")
+- **Sati quality**: shifted from retrospective reframe ("procrastination was skillful discernment") to real-time course correction ("a stated design principle corrected a premature optimization three times")
 - **Somatic awareness**: appeared for the first time (chest tightness, "smriti as detection dye")
 - **Capacity estimation**: the first predictive estimate in the dataset was directionally accurate
 - **Recovery window**: tentatively shortened (2 days post-sprint vs 4 days pre-practice)
@@ -714,7 +714,7 @@ Explicit duration annotations are extremely rare — the vault doesn't track tim
 
 ## Practice Cadence Observed (illustrative)
 
-Samatha practice recommitted after a gap. A couple of days missed (a chaotic day, a social-drinking day), then consistent with occasional misses.
+Samatha practice resumed after a lapse and recommitment. A couple of days were missed (a high-disruption day, a day with unplanned social obligations), then practice continued consistently with occasional misses.
 
 Session lengths: predominantly 15 min (the minimum set), with occasional 20- and 30-min sessions. Miss-day information is as signal-bearing as practice-day information — miss-days correlate with known disruption vectors (social drinking, chaos). Structured capture should preserve zeros.
 

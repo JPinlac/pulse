@@ -5,16 +5,13 @@ efforts: [pulse]
 created: 2026-04-15
 updated: 2026-04-15
 informs:
-  - pulse-graph-migration
-  - pulse-graph-architecture
-  - pulse-cli-surfacing-boundary
   - pulse-architecture-improvements
   - pulse-capacity-model
 ---
 
 # pulse-calc.py — Design & Architecture
 
-Deterministic priority computation extracted from LLM reasoning into a Python script. This document covers why, how, and what transfers to the graph CLI.
+Deterministic priority computation extracted from LLM reasoning into a Python script. This document covers why the script exists and how it's structured.
 
 ## Problem
 
@@ -34,10 +31,9 @@ Options considered:
 |----------|------|------|
 | Another markdown skill | Easy to write | Still LLM-estimated, same problems |
 | Python script via `uv run` | Deterministic, zero infra, auditable JSON | Reads files each run (slow for large vaults) |
-| pulse-cli (graph) | Canonical long-term solution | Multi-phase project, Neo4j dependency, unclear timeline |
 | Local API server | Fast after startup, persistent state | Over-engineered for the problem, server lifecycle |
 
-Chose the script. Key constraints: no server (low weight), `uv run` handles dependencies (PEP 723, single file), formulas transfer directly to graph CLI Phase 3.
+Chose the script. Key constraints: no server (low weight), `uv run` handles dependencies (PEP 723, single file) — the formula lives in exactly one place, callable without any persistent process.
 
 ## Boundary: Script Computes, Agent Interprets
 
@@ -59,7 +55,7 @@ The agent owns:
 - Validation prompts and correction logging
 - Session log entries
 
-This boundary maps to SRSA: the script is pure Sense (deterministic logic), the agent does Route and Surface (judgment on computed inputs). See `[[pulse-cli-surfacing-boundary]]` for the generalized version of this boundary — `pulse-calc.py` is the first concrete implementation of the "CLI computes, skill layer interprets" pattern.
+This boundary maps to SRSA: the script is pure Sense (deterministic logic), the agent does Route and Surface (judgment on computed inputs). The pattern generalizes beyond this one script: any layer that computes deterministically should stay separate from the layer that interprets and decides — mixing the two is what caused the original Sense/Surface fusion problem.
 
 ## Key Discoveries During Extraction
 
@@ -77,35 +73,13 @@ With uncapped loop_factor and a 12-item ceiling, pulse plan Notes (all `importan
 
 Fix: per-effort cap of 3 on high/medium items. Low-importance items flow uncapped — they serve as break-time/peripheral tasks that surface from lower-weight efforts. Ceiling raised to 20 to accommodate the broader spread. Display splits into "Important Items" (top ~12) and "Between Tasks" (remainder).
 
-This is a capacity-aware display decision. See `[[pulse-capacity-model]]` — the effort cap is a simple form of "attention budget" that the capacity model will eventually generalize.
+This is a capacity-aware display decision: the effort cap is a simple form of "attention budget" — a hard limit on how many high/medium items from one effort can occupy the top of the list, regardless of what the raw formula would otherwise rank first.
 
 ### Map Entry Summaries as Descriptions
 
 Note-type items initially displayed as raw slugs (`deploy-pipeline-proposal`, `pulse-capacity-model`). Map entries have human-readable summaries: `[[deploy-pipeline-proposal]] — proposal updated: project-specific problem + opportunity sections`. The script now extracts these summaries from `## Active Threads` and uses them as item descriptions. Minor Actions already had human descriptions.
 
 This means Map entry summaries serve double duty: navigation in Obsidian *and* display in the `/pulse` briefing. The ≤15-word Map entry convention matters more now.
-
-## Relationship to Graph Migration
-
-`scripts/pulse-calc.py` is a bridge to `[[pulse-graph-migration]]` Phase 3 (Computation Bootstrap). The formulas are identical — what changes is the data source:
-
-| | pulse-calc.py (current) | pulse-cli recompute (future) |
-|---|---|---|
-| Data source | Markdown files (Maps/*.md, Notes/*.md) | Neo4j graph |
-| Parsing | Regex + YAML | Cypher queries |
-| Open loop boundary | `parse_active_threads()` on Map body | `belongs_to` edge type in graph |
-| Reference exclusion | `subtype: reference` check | Node property or label |
-| Summary text | Extracted from Map entry text | Node `summary` property |
-| Output | JSON to stdout | JSON to stdout (same schema) |
-
-The output schema is designed to be the same — the `/pulse` skill's consumption code shouldn't change when the backend switches. The graph adds capabilities the script can't provide (temporal queries, cascade effects, rich cross-effort traversal), but for priority computation the formulas are the same.
-
-Relevant graph notes:
-- `[[pulse-graph-architecture]]` — graph data model, node/edge schemas
-- `[[pulse-graph-migration]]` — Phase 3 = computation bootstrap (where this script's logic migrates)
-- `[[pulse-cli-surfacing-boundary]]` — CLI computes, skill layer interprets (the pattern this implements)
-- `[[pulse-cli-skill-interface-design]]` — contract between CLI and skill layer
-- `[[pulse-migration-file-map]]` — inventory of files for migration
 
 ## Script Architecture
 
@@ -131,8 +105,5 @@ CLI: `uv run scripts/pulse-calc.py --vault . [--date YYYY-MM-DD] [--effort-cap N
 
 ## Informs
 
-- `[[pulse-graph-migration]]` — Phase 3 computation bootstrap uses same formulas
-- `[[pulse-graph-architecture]]` — script output schema prefigures graph query results
-- `[[pulse-cli-surfacing-boundary]]` — first concrete implementation of compute/interpret boundary
-- `[[pulse-architecture-improvements]]` — Sense/Surface boundary more precisely defined
-- `[[pulse-capacity-model]]` — effort cap as simple attention budget
+- pulse-architecture-improvements — Sense/Surface boundary more precisely defined
+- pulse-capacity-model — effort cap as simple attention budget
